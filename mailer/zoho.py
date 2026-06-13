@@ -1,0 +1,307 @@
+import smtplib, sqlite3, logging
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from datetime import datetime, timedelta
+from mailer.templates import render_template, select_template
+from db.schema import DB_PATH
+
+ZOHO_SMTP_HOST = 'smtp.zoho.in'
+ZOHO_SMTP_PORT = 465
+
+def get_leads_for_campaign(conn, phase: int, limit: int) -> list:
+    """
+    Phase 1: quality_score >= 8, country in high-value list
+    Phase 2: quality_score >= 7, region = India
+    Phase 3: quality_score >= 5, any country
+    Only leads never contacted before (not in email_tracking).
+    Only leads with a valid email address.
+    """
+    phase_filters = {
+        1: """
+            AND (country IN (
+                'United Arab Emirates', 'UAE', 'Saudi Arabia',
+                'Qatar', 'Oman', 'Kuwait', 'Bahrain'
+            ) OR quality_score >= 8)
+        """,
+        2: """
+            AND (region = 'India' OR country = 'India')
+            AND quality_score >= 6
+        """,
+        3: """
+            AND quality_score >= 5
+        """,
+    }
+
+    query = f"""
+        SELECT
+            c.id,
+            c.name,
+            c.domain,
+            c.email_1 as email,
+            c.contact_name,
+            c.contact_title,
+            c.contact_email,
+            c.country,
+            c.region,
+            c.sector,
+            c.has_active_tender,
+            c.tender_description,
+            c.quality_score
+        FROM companies c
+        LEFT JOIN email_tracking et ON et.company_id = c.id
+        WHERE et.id IS NULL
+        AND (
+            c.contact_email IS NOT NULL AND c.contact_email != ''
+            OR c.email_1 IS NOT NULL AND c.email_1 != ''
+        )
+        AND c.name NOT LIKE '%Test%'
+        AND c.name NOT LIKE '%Example%'
+        {phase_filters.get(phase, '')}
+        ORDER BY c.quality_score DESC, c.has_active_tender DESC
+        LIMIT ?
+    """
+
+    return conn.execute(query, (limit,)).fetchall()
+
+def plain_to_html(plain_text: str, pixel_url: str) -> str:
+    """
+    Convert plain text email to minimal clean HTML.
+    Preserves line breaks and bullet points.
+    Appends tracking pixel.
+    No heavy newsletter styling — looks like a real person wrote it.
+    """
+    lines = plain_text.strip().split('\n')
+    html_lines = []
+
+    for line in lines:
+        line = line.strip()
+        if not line:
+            html_lines.append('<br>')
+        elif line.startswith('•'):
+            html_lines.append(
+                f'<p style="margin:2px 0 2px 16px;">{line}</p>'
+            )
+        else:
+            html_lines.append(f'<p style="margin:4px 0;">{line}</p>')
+
+    pixel = (
+        f'<img src="{pixel_url}" width="1" height="1" '
+        f'style="display:none;" alt="">'
+    )
+
+    return f"""
+    <html><body style="font-family:Arial,sans-serif;font-size:14px;
+    color:#1C2833;max-width:560px;margin:0 auto;padding:20px;">
+    {''.join(html_lines)}
+    {pixel}
+    </body></html>
+    """
+
+def send_campaign(phase: int = 1, limit: int = 20,
+                  dry_run: bool = False):
+    """
+    Main outreach function.
+    dry_run=True prints emails to terminal without sending.
+    """
+    import os
+    ZOHO_EMAIL    = os.environ.get('ZOHO_EMAIL', 'somesh.nammina@cadlink.in')
+    ZOHO_PASSWORD = os.environ.get('ZOHO_APP_PASSWORD', 'bFZp0iNjXYk7')
+
+    conn  = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    leads = get_leads_for_campaign(conn, phase, limit)
+
+    if not leads:
+        logging.warning("No leads found for this phase. "
+                        "Run scrapers first.")
+        return
+
+    logging.info(f"Sending to {len(leads)} leads "
+                 f"(Phase {phase}, dry_run={dry_run})")
+
+    sent = 0
+    for lead in leads:
+        lead = dict(lead)
+
+        # Get recipient
+        recipient = (lead.get('contact_email') or
+                     lead.get('email') or '')
+        if not recipient or '@' not in recipient:
+            logging.warning(
+                f"No valid email for {lead.get('name')} — skip"
+            )
+            continue
+
+        # Validate — never send to self, never send to test
+        if recipient == ZOHO_EMAIL:
+            logging.error(
+                f"Recipient = sender for {lead.get('name')} — "
+                f"SKIPPING. Fix the lead data."
+            )
+            continue
+        if 'test' in lead.get('name','').lower():
+            logging.warning(
+                f"Test company detected: {lead.get('name')} — skip"
+            )
+            continue
+
+        # Select and render template
+        try:
+            subject, body_template = select_template(lead)
+            body = render_template(body_template, lead)
+            subject_rendered = render_template(subject, lead)
+        except ValueError as e:
+            logging.error(f"Template error for {lead.get('name')}: {e}")
+            continue
+
+        if dry_run:
+            print(f"\n{'='*60}")
+            print(f"TO:      {recipient}")
+            print(f"SUBJECT: {subject_rendered}")
+            print(f"BODY:\n{body}")
+            print(f"{'='*60}")
+            sent += 1
+            continue
+
+        # Build MIME message
+        msg = MIMEMultipart('alternative')
+        msg['From']    = f"Somesh Nammina <{ZOHO_EMAIL}>"
+        msg['To']      = recipient
+        msg['Subject'] = subject_rendered
+        msg['Reply-To'] = ZOHO_EMAIL
+
+        # Plain text version (always include — spam filters prefer it)
+        msg.attach(MIMEText(body, 'plain'))
+
+        # HTML version with tracking pixel
+        tracking_base = os.environ.get(
+            'TRACKING_BASE_URL', 'https://cadlink.in'
+        )
+        pixel_url = f"{tracking_base}/pixel/{lead['id']}.png"
+        html_body = plain_to_html(body, pixel_url)
+        msg.attach(MIMEText(html_body, 'html'))
+
+        # Send
+        try:
+            with smtplib.SMTP_SSL(
+                ZOHO_SMTP_HOST, ZOHO_SMTP_PORT
+            ) as smtp:
+                smtp.login(ZOHO_EMAIL, ZOHO_PASSWORD)
+                smtp.sendmail(ZOHO_EMAIL, recipient,
+                              msg.as_string())
+
+            # Log to email_tracking
+            follow_up_due = (
+                datetime.now() + timedelta(days=7)
+            ).isoformat()
+            conn.execute('''
+                INSERT INTO email_tracking
+                (company_id, recipient_email, recipient_name,
+                 subject, sent_at, follow_up_due, campaign_phase)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                lead['id'], recipient,
+                lead.get('contact_name', ''),
+                subject_rendered,
+                datetime.now().isoformat(),
+                follow_up_due,
+                phase,
+            ))
+            conn.commit()
+
+            sent += 1
+            logging.info(
+                f"✅ Sent to {lead.get('name')} "
+                f"<{recipient}>"
+            )
+
+        except smtplib.SMTPException as e:
+            logging.error(
+                f"SMTP error for {lead.get('name')}: {e}"
+            )
+
+    logging.info(f"Campaign complete. Sent: {sent}/{len(leads)}")
+    conn.close()
+
+
+def send_follow_ups(dry_run: bool = False):
+    """
+    Send follow-up emails to leads that:
+    - Were sent an email 7+ days ago
+    - Have not replied (replied = 0)
+    - Have not been followed up yet (follow_up_sent = 0)
+    - Optionally: opened the email (prioritize openers first)
+    """
+    import os
+    conn  = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    
+    ZOHO_EMAIL    = os.environ.get('ZOHO_EMAIL', 'somesh.nammina@cadlink.in')
+    ZOHO_PASSWORD = os.environ.get('ZOHO_APP_PASSWORD', 'bFZp0iNjXYk7')
+
+    due = conn.execute('''
+        SELECT et.*, c.name, c.country, c.region,
+               c.has_active_tender, c.tender_description,
+               c.contact_name, c.email, c.contact_email
+        FROM email_tracking et
+        JOIN companies c ON c.id = et.company_id
+        WHERE et.replied = 0
+        AND et.follow_up_sent = 0
+        AND et.bounced = 0
+        AND et.follow_up_due <= datetime('now')
+        ORDER BY et.open_count DESC, et.sent_at ASC
+        LIMIT 20
+    ''').fetchall()
+
+    logging.info(f"Follow-ups due: {len(due)}")
+
+    for row in due:
+        lead = dict(row)
+        lead['id'] = lead['company_id']
+
+        recipient = (lead.get('contact_email') or
+                     lead.get('email') or '')
+        if not recipient:
+            continue
+
+        subject, body_template = select_template(
+            lead, is_followup=True
+        )
+        body = render_template(body_template, lead)
+
+        if dry_run:
+            print(f"FOLLOW-UP → {lead['name']} <{recipient}>")
+            print(body)
+            continue
+
+        # Build MIME message
+        msg = MIMEMultipart('alternative')
+        msg['From']    = f"Somesh Nammina <{ZOHO_EMAIL}>"
+        msg['To']      = recipient
+        msg['Subject'] = subject
+        msg['Reply-To'] = ZOHO_EMAIL
+
+        msg.attach(MIMEText(body, 'plain'))
+        
+        tracking_base = os.environ.get('TRACKING_BASE_URL', 'https://cadlink.in')
+        pixel_url = f"{tracking_base}/pixel/{lead['id']}.png"
+        html_body = plain_to_html(body, pixel_url)
+        msg.attach(MIMEText(html_body, 'html'))
+
+        # Send
+        try:
+            with smtplib.SMTP_SSL(ZOHO_SMTP_HOST, ZOHO_SMTP_PORT) as smtp:
+                smtp.login(ZOHO_EMAIL, ZOHO_PASSWORD)
+                smtp.sendmail(ZOHO_EMAIL, recipient, msg.as_string())
+
+            conn.execute('''
+                UPDATE email_tracking
+                SET follow_up_sent = 1
+                WHERE id = ?
+            ''', (row['id'],))
+            conn.commit()
+            logging.info(f"✅ Follow-up sent: {lead['name']}")
+        except smtplib.SMTPException as e:
+            logging.error(f"SMTP error for {lead['name']}: {e}")
+
+    conn.close()

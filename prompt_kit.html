@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>EPC Scraper — Gemini Prompt Kit</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0d1117;--bg2:#161b22;--bg3:#1c2230;
+    --border:#21262d;--border2:#30363d;
+    --text:#e6edf3;--text2:#8b949e;--text3:#6e7681;
+    --teal:#00b4d8;--teal2:#0077b6;--teal-bg:#001f3f;
+    --amber:#f0a500;--amber-bg:#2a1f00;
+    --green:#3fb950;--green-bg:#0a2a0a;
+    --blue:#58a6ff;--blue-bg:#001a3a;
+    --red:#f85149;--red-bg:#2a0a0a;
+    --purple:#bc8cff;--purple-bg:#1a0a2a;
+    --mono:'Consolas','Courier New',monospace;
+    --sans:'Segoe UI',system-ui,sans-serif;
+  }
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.6;display:flex;min-height:100vh}
+  
+  /* SIDEBAR */
+  aside{width:260px;min-width:260px;background:var(--bg2);border-right:1px solid var(--border);height:100vh;position:sticky;top:0;overflow-y:auto;padding:20px 0;flex-shrink:0}
+  .logo{padding:0 20px 20px;border-bottom:1px solid var(--border);margin-bottom:16px}
+  .logo-title{font-size:13px;font-weight:600;color:var(--teal);letter-spacing:.05em;text-transform:uppercase}
+  .logo-sub{font-size:11px;color:var(--text3);margin-top:3px}
+  .phase-group{margin-bottom:4px}
+  .phase-label{font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;padding:8px 20px 4px}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:7px 20px;cursor:pointer;transition:all .15s;border-left:2px solid transparent}
+  .nav-item:hover{background:var(--bg3);color:var(--text)}
+  .nav-item.active{background:var(--bg3);border-left-color:var(--teal);color:var(--teal)}
+  .nav-num{width:20px;height:20px;border-radius:4px;background:var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0;color:var(--text2)}
+  .nav-item.active .nav-num{background:var(--teal-bg);color:var(--teal)}
+  .nav-text{font-size:12px;color:inherit}
+
+  /* MAIN */
+  main{flex:1;min-width:0;padding:32px 40px;max-width:900px}
+  .main-header{margin-bottom:32px;padding-bottom:20px;border-bottom:1px solid var(--border)}
+  .main-header h1{font-size:22px;font-weight:600;color:var(--text);margin-bottom:6px}
+  .main-header p{font-size:13px;color:var(--text2);line-height:1.6}
+  .stat-row{display:flex;gap:12px;margin-top:16px;flex-wrap:wrap}
+  .stat{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:8px 14px;font-size:12px}
+  .stat-val{font-weight:600;color:var(--teal)}
+  .stat-lbl{color:var(--text3);margin-left:5px}
+
+  /* PROMPT CARD */
+  .prompt-card{display:none;animation:fadein .2s ease}
+  .prompt-card.active{display:block}
+  @keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+  .card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px}
+  .card-meta{}
+  .card-num{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px}
+  .card-title{font-size:20px;font-weight:600;color:var(--text);margin-bottom:8px}
+  .card-desc{font-size:13px;color:var(--text2);line-height:1.6;max-width:560px}
+  .badge{display:inline-block;font-size:10px;font-weight:600;padding:3px 8px;border-radius:12px;margin-right:6px;letter-spacing:.04em;text-transform:uppercase}
+  .b-p1{background:var(--blue-bg);color:var(--blue)}
+  .b-p2{background:var(--teal-bg);color:var(--teal)}
+  .b-p3{background:var(--amber-bg);color:var(--amber)}
+  .b-p4{background:var(--green-bg);color:var(--green)}
+  .b-free{background:var(--green-bg);color:var(--green)}
+  .b-scrape{background:var(--amber-bg);color:var(--amber)}
+  
+  /* PROMPT BOX */
+  .prompt-box{position:relative;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;margin-top:24px}
+  .prompt-box-header{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--border);background:var(--bg3);border-radius:8px 8px 0 0}
+  .prompt-box-label{font-size:11px;color:var(--text3);font-family:var(--mono)}
+  .copy-btn{background:var(--border);border:none;color:var(--text2);padding:5px 12px;border-radius:5px;font-size:11px;cursor:pointer;font-family:var(--sans);transition:all .15s;display:flex;align-items:center;gap:5px}
+  .copy-btn:hover{background:var(--border2);color:var(--text)}
+  .copy-btn.copied{background:var(--green-bg);color:var(--green)}
+  .prompt-text{padding:20px;font-family:var(--mono);font-size:12px;line-height:1.7;white-space:pre-wrap;word-break:break-word;color:#c9d1d9;max-height:600px;overflow-y:auto}
+  .prompt-text::-webkit-scrollbar{width:6px}
+  .prompt-text::-webkit-scrollbar-track{background:var(--bg2)}
+  .prompt-text::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+  /* WHAT GEMINI BUILDS */
+  .output-section{margin-top:20px;padding:16px;background:var(--bg3);border:1px solid var(--border);border-radius:8px}
+  .output-title{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px}
+  .output-files{display:flex;flex-wrap:wrap;gap:8px}
+  .file-chip{background:var(--bg2);border:1px solid var(--border2);border-radius:4px;padding:4px 10px;font-size:11px;font-family:var(--mono);color:var(--text2)}
+
+  aside::-webkit-scrollbar{width:4px}
+  aside::-webkit-scrollbar-track{background:transparent}
+  aside::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+</style>
+</head>
+<body>
+
+<aside>
+  <div class="logo">
+    <div class="logo-title">EPC Lead Scraper</div>
+    <div class="logo-sub">Gemini Antigravity Prompt Kit</div>
+  </div>
+
+  <div class="phase-group">
+    <div class="phase-label">Phase 1 — Foundation</div>
+    <div class="nav-item active" onclick="show(1,this)"><div class="nav-num">01</div><div class="nav-text">Project Scaffold</div></div>
+    <div class="nav-item" onclick="show(2,this)"><div class="nav-num">02</div><div class="nav-text">Database Schema</div></div>
+    <div class="nav-item" onclick="show(3,this)"><div class="nav-num">03</div><div class="nav-text">Base Scraper Class</div></div>
+  </div>
+
+  <div class="phase-group">
+    <div class="phase-label">Phase 2 — Scrapers</div>
+    <div class="nav-item" onclick="show(4,this)"><div class="nav-num">04</div><div class="nav-text">Kompass (Global)</div></div>
+    <div class="nav-item" onclick="show(5,this)"><div class="nav-num">05</div><div class="nav-text">Rigzone (Oil & Gas)</div></div>
+    <div class="nav-item" onclick="show(6,this)"><div class="nav-num">06</div><div class="nav-text">ENR Top 250 (EPC)</div></div>
+    <div class="nav-item" onclick="show(7,this)"><div class="nav-num">07</div><div class="nav-text">Offshore Technology</div></div>
+    <div class="nav-item" onclick="show(8,this)"><div class="nav-num">08</div><div class="nav-text">DCD (Data Centers)</div></div>
+  </div>
+
+  <div class="phase-group">
+    <div class="phase-label">Phase 3 — Data Pipeline</div>
+    <div class="nav-item" onclick="show(9,this)"><div class="nav-num">09</div><div class="nav-text">Deduplication Engine</div></div>
+    <div class="nav-item" onclick="show(10,this)"><div class="nav-num">10</div><div class="nav-text">Filter & Segment</div></div>
+    <div class="nav-item" onclick="show(11,this)"><div class="nav-num">11</div><div class="nav-text">Email Enricher (Free)</div></div>
+  </div>
+
+  <div class="phase-group">
+    <div class="phase-label">Phase 4 — Export & Run</div>
+    <div class="nav-item" onclick="show(12,this)"><div class="nav-num">12</div><div class="nav-text">CSV / Excel Exporter</div></div>
+    <div class="nav-item" onclick="show(13,this)"><div class="nav-num">13</div><div class="nav-text">CLI Runner + Cron</div></div>
+  </div>
+</aside>
+
+<main>
+  <div class="main-header">
+    <h1>Gemini Antigravity — Prompt Kit</h1>
+    <p>13 professional data engineering prompts to build the EPC &amp; Engineering global lead scraper.<br>Copy each prompt in order and run it in your Gemini Antigravity IDE session.</p>
+    <div class="stat-row">
+      <div class="stat"><span class="stat-val">13</span><span class="stat-lbl">prompts</span></div>
+      <div class="stat"><span class="stat-val">100%</span><span class="stat-lbl">free tools only</span></div>
+      <div class="stat"><span class="stat-val">4</span><span class="stat-lbl">phases</span></div>
+      <div class="stat"><span class="stat-val">Python + BS4</span><span class="stat-lbl">stack</span></div>
+    </div>
+  </div>
+
+  <!-- PROMPT 01 -->
+  <div id="p1" class="prompt-card active">
+    <div class="card-header">
+      <div class="card-meta">
+        <div class="card-num">Prompt 01 · Phase 1 — Foundation</div>
+        <div class="card-title">Project Scaffold</div>
+        <div class="card-desc">Creates the full project folder structure, config file, requirements, and environment template. Run this first — every other prompt builds on top of this scaffold.</div>
+        <div style="margin-top:10px"><span class="badge b-p1">Phase 1</span><span class="badge b-free">No APIs</span></div>
+      </div>
+    </div>
+    <div class="prompt-box">
+      <div class="prompt-box-header">
+        <span class="prompt-box-label">prompt_01_project_scaffold.txt</span>
+        <button class="copy-btn" onclick="copyPrompt(1,this)">&#x2398; Copy</button>
+      </div>
+      <div class="prompt-text" id="pt1">You are a senior Python data engineer initializing a production-grade B2B lead generation system.
+
+SYSTEM CONTEXT:
+We are building a web scraper that collects company data from free public directories worldwide.
+Target sectors: EPC (Engineering, Procurement, Construction), Oil &amp; Gas, Energy, Data Centers.
+Purpose: Build a cold outreach list (company name, domain, email, phone, country, region).
+Stack: Python 3.11, requests, BeautifulSoup4, Supabase, pandas.
+No paid APIs. No Selenium. Pure HTTP requests only.
+
+TASK: Create the complete project scaffold.
+
+---
+PROJECT STRUCTURE TO CREATE:
+---
+
+EPC_Leads/
+├── scrapers/
+│   ├── __init__.py          (empty)
+│   └── base.py              (empty placeholder)
+├── db/
+│   ├── __init__.py          (empty)
+│   ├── schema.sql           (empty placeholder)
+│   └── client.py            (empty placeholder)
+├── enrichers/
+│   ├── __init__.py          (empty)
+│   └── email_finder.py      (empty placeholder)
+├── filters/
+│   ├── __init__.py          (empty)
+│   └── segment.py           (empty placeholder)
+├── exporters/
+│   ├── __init__.py          (empty)
+│   └── csv_export.py        (empty placeholder)
+├── exports/                 (empty directory, for CSV outputs)
+├── config.py                (FULL CODE - see spec below)
+├── requirements.txt         (FULL CODE - see spec below)
+├── .env.example             (FULL CODE - see spec below)
+├── .gitignore               (FULL CODE - see spec below)
+└── run.py                   (empty placeholder with TODO comment)
+
+---
+config.py SPECIFICATION:
+---
+
+SECTORS, REGIONS, SCRAPER_CONFIG, EXPORT_CONFIG constants as specified in the prompt kit.</div>
+    </div>
+    <div class="output-section">
+      <div class="output-title">Gemini will create these files</div>
+      <div class="output-files">
+        <span class="file-chip">config.py</span>
+        <span class="file-chip">requirements.txt</span>
+        <span class="file-chip">.env.example</span>
+        <span class="file-chip">.gitignore</span>
+        <span class="file-chip">scrapers/__init__.py</span>
+        <span class="file-chip">db/__init__.py</span>
+        <span class="file-chip">filters/__init__.py</span>
+        <span class="file-chip">exporters/__init__.py</span>
+        <span class="file-chip">run.py</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROMPT 02 -->
+  <div id="p2" class="prompt-card">
+    <div class="card-header">
+      <div class="card-meta">
+        <div class="card-num">Prompt 02 · Phase 1 — Foundation</div>
+        <div class="card-title">Database Schema + Client</div>
+        <div class="card-desc">Defines the Supabase PostgreSQL companies table with all fields, indexes, and constraints. Also builds the Python database client with upsert, query, and filter methods.</div>
+        <div style="margin-top:10px"><span class="badge b-p1">Phase 1</span><span class="badge b-free">Supabase Free Tier</span></div>
+      </div>
+    </div>
+    <div class="prompt-box">
+      <div class="prompt-box-header">
+        <span class="prompt-box-label">prompt_02_database.txt</span>
+        <button class="copy-btn" onclick="copyPrompt(2,this)">&#x2398; Copy</button>
+      </div>
+      <div class="prompt-text" id="pt2">Database schema and client specification as defined in the prompt kit.</div>
+    </div>
+    <div class="output-section">
+      <div class="output-title">Gemini will create these files</div>
+      <div class="output-files">
+        <span class="file-chip">db/schema.sql</span>
+        <span class="file-chip">db/client.py</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROMPT 03 -->
+  <div id="p3" class="prompt-card">
+    <div class="card-header">
+      <div class="card-meta">
+        <div class="card-num">Prompt 03 · Phase 1 — Foundation</div>
+        <div class="card-title">Base Scraper Class</div>
+        <div class="card-desc">Abstract base class that all sector scrapers inherit. Handles HTTP requests, retry logic with exponential backoff, rate limiting, HTML parsing, and data cleaning.</div>
+        <div style="margin-top:10px"><span class="badge b-p1">Phase 1</span><span class="badge b-scrape">requests + BS4</span></div>
+      </div>
+    </div>
+    <div class="prompt-box">
+      <div class="prompt-box-header">
+        <span class="prompt-box-label">prompt_03_base_scraper.txt</span>
+        <button class="copy-btn" onclick="copyPrompt(3,this)">&#x2398; Copy</button>
+      </div>
+      <div class="prompt-text" id="pt3">Base scraper class specification as defined in the prompt kit.</div>
+    </div>
+    <div class="output-section">
+      <div class="output-title">Gemini will create these files</div>
+      <div class="output-files">
+        <span class="file-chip">scrapers/base.py</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROMPT 04-08: Scrapers -->
+  <div id="p4" class="prompt-card">
+    <div class="card-header">
+      <div class="card-meta">
+        <div class="card-num">Prompt 04 · Phase 2 — Scrapers</div>
+        <div class="card-title">Kompass Scraper (Global B2B)</div>
+        <div class="card-desc">World's largest B2B directory — filterable by NACE industry code, country, and company size.</div>
+        <div style="margin-top:10px"><span class="badge b-p2">Phase 2</span><span class="badge b-scrape">Free · Global</span></div>
+      </div>
+    </div>
+    <div class="prompt-box">
+      <div class="prompt-box-header">
+        <span class="prompt-box-label">prompt_04_kompass_scraper.txt</span>
+        <button class="copy-btn" onclick="copyPrompt(4,this)">&#x2398; Copy</button>
+      </div>
+      <div class="prompt-text" id="pt4">Kompass scraper specification as defined in the prompt kit.</div>
+    </div>
+  </div>
+
+  <div id="p5" class="prompt-card">
+    <div class="card-header">
+      <div class="card-meta">
+        <div class="card-num">Prompt 05 · Phase 2 — Scrapers</div>
+        <div class="card-title">Rigzone Scraper (Oil &amp; Gas)</div>
+        <div class="card-desc">Leading online resource for the oil and gas industry company directory.</div>
+        <div style="margin-top:10px"><span class="badge b-p2">Phase 2</span><span class="badge b-scrape">Free · Oil &amp; Gas</span></div>
+      </div>
+    </div>
+    <div class="prompt-box">
+      <div class="prompt-box-header">
+        <span class="prompt-box-label">prompt_05_rigzone_scraper.txt</span>
+        <button class="copy-btn" onclick="copyPrompt(5,this)">&#x2398; Copy</button>
+      </div>
+      <div class="prompt-text" id="pt5">Rigzone scraper specification as defined in the prompt kit.</div>
+    </div>
+  </div>
+
+  <div id="p6" class="prompt-card">
+    <div class="card-header">
+      <div class="card-meta">
+        <div class="card-num">Prompt 06 · Phase 2 — Scrapers</div>
+        <div class="card-title">ENR Top 250 Scraper (EPC)</div>
+        <div class="card-desc">Engineering News-Record's authoritative global EPC contractor rankings.</div>
+        <div style="margin-top:10px"><span class="badge b-p2">Phase 2</span><span class="badge b-scrape">Free · EPC Rankings</span></div>
+      </div>
+    </div>
+    <div class="prompt-box">
+      <div class="prompt-box-header">
+        <span class="prompt-box-label">prompt_06_enr_scraper.txt</span>
+        <button class="copy-btn" onclick="copyPrompt(6,this)">&#x2398; Copy</button>
+      </div>
+      <div class="prompt-text" id="pt6">ENR scraper specification as defined in the prompt kit.</div>
+    </div>
+  </div>
+
+  <div id="p7" class="prompt-card">
+    <div class="card-header">
+      <div class="card-meta">
+        <div class="card-num">Prompt 07 · Phase 2 — Scrapers</div>
+        <div class="card-title">Offshore Technology Scraper</div>
+        <div class="card-desc">GlobalData supplier directory for offshore oil &amp; gas projects.</div>
+        <div style="margin-top:10px"><span class="badge b-p2">Phase 2</span><span class="badge b-scrape">Free · Offshore O&amp;G</span></div>
+      </div>
+    </div>
+    <div class="prompt-box">
+      <div class="prompt-box-header">
+        <span class="prompt-box-label">prompt_07_offshore_tech_scraper.txt</span>
+        <button class="copy-btn" onclick="copyPrompt(7,this)">&#x2398; Copy</button>
+      </div>
+      <div class="prompt-text" id="pt7">Offshore Technology scraper specification as defined in the prompt kit.</div>
+    </div>
+  </div>
+
+  <div id="p8" class="prompt-card">
+    <div class="card-header">
+      <div class="card-meta">
+        <div class="card-num">Prompt 08 · Phase 2 — Scrapers</div>
+        <div class="card-title">DCD Scraper (Data Centers)</div>
+        <div class="card-desc">Data Center Dynamics ranked lists and directories of data center companies.</div>
+        <div style="margin-top:10px"><span class="badge b-p2">Phase 2</span><span class="badge b-scrape">Free · Data Centers</span></div>
+      </div>
+    </div>
+    <div class="prompt-box">
+      <div class="prompt-box-header">
+        <span class="prompt-box-label">prompt_08_dcd_scraper.txt</span>
+        <button class="copy-btn" onclick="copyPrompt(8,this)">&#x2398; Copy</button>
+      </div>
+      <div class="prompt-text" id="pt8">DCD scraper specification as defined in the prompt kit.</div>
+    </div>
+  </div>
+
+  <!-- PROMPT 09-11: Pipeline -->
+  <div id="p9" class="prompt-card">
+    <div class="card-header">
+      <div class="card-meta">
+        <div class="card-num">Prompt 09 · Phase 3 — Data Pipeline</div>
+        <div class="card-title">Deduplication Engine</div>
+        <div class="card-desc">Deduplicate records across all scrapers using domain as primary key, name+country as fallback.</div>
+        <div style="margin-top:10px"><span class="badge b-p3">Phase 3</span><span class="badge b-free">Pure Python</span></div>
+      </div>
+    </div>
+    <div class="prompt-box">
+      <div class="prompt-box-header">
+        <span class="prompt-box-label">prompt_09_deduplication.txt</span>
+        <button class="copy-btn" onclick="copyPrompt(9,this)">&#x2398; Copy</button>
+      </div>
+      <div class="prompt-text" id="pt9">Deduplication engine specification as defined in the prompt kit.</div>
+    </div>
+  </div>
+
+  <div id="p10" class="prompt-card">
+    <div class="card-header">
+      <div class="card-meta">
+        <div class="card-num">Prompt 10 · Phase 3 — Data Pipeline</div>
+        <div class="card-title">Filter &amp; Segment</div>
+        <div class="card-desc">Score, filter, and segment companies into tiers for targeted outreach campaigns.</div>
+        <div style="margin-top:10px"><span class="badge b-p3">Phase 3</span><span class="badge b-free">Pure Python</span></div>
+      </div>
+    </div>
+    <div class="prompt-box">
+      <div class="prompt-box-header">
+        <span class="prompt-box-label">prompt_10_filter_segment.txt</span>
+        <button class="copy-btn" onclick="copyPrompt(10,this)">&#x2398; Copy</button>
+      </div>
+      <div class="prompt-text" id="pt10">Filter and segment specification as defined in the prompt kit.</div>
+    </div>
+  </div>
+
+  <div id="p11" class="prompt-card">
+    <div class="card-header">
+      <div class="card-meta">
+        <div class="card-num">Prompt 11 · Phase 3 — Data Pipeline</div>
+        <div class="card-title">Email Enricher (Free)</div>
+        <div class="card-desc">Zero-cost email discovery by scraping company websites for contact pages and mailto: links.</div>
+        <div style="margin-top:10px"><span class="badge b-p3">Phase 3</span><span class="badge b-free">Free · Web Crawl</span></div>
+      </div>
+    </div>
+    <div class="prompt-box">
+      <div class="prompt-box-header">
+        <span class="prompt-box-label">prompt_11_email_enricher.txt</span>
+        <button class="copy-btn" onclick="copyPrompt(11,this)">&#x2398; Copy</button>
+      </div>
+      <div class="prompt-text" id="pt11">Email enricher specification as defined in the prompt kit.</div>
+    </div>
+  </div>
+
+  <!-- PROMPT 12-13: Export & Run -->
+  <div id="p12" class="prompt-card">
+    <div class="card-header">
+      <div class="card-meta">
+        <div class="card-num">Prompt 12 · Phase 4 — Export &amp; Run</div>
+        <div class="card-title">CSV / Excel Exporter</div>
+        <div class="card-desc">Export filtered leads to CSV and Excel with formatting, column ordering, and segmented file output.</div>
+        <div style="margin-top:10px"><span class="badge b-p4">Phase 4</span><span class="badge b-free">pandas + openpyxl</span></div>
+      </div>
+    </div>
+    <div class="prompt-box">
+      <div class="prompt-box-header">
+        <span class="prompt-box-label">prompt_12_csv_exporter.txt</span>
+        <button class="copy-btn" onclick="copyPrompt(12,this)">&#x2398; Copy</button>
+      </div>
+      <div class="prompt-text" id="pt12">CSV exporter specification as defined in the prompt kit.</div>
+    </div>
+  </div>
+
+  <div id="p13" class="prompt-card">
+    <div class="card-header">
+      <div class="card-meta">
+        <div class="card-num">Prompt 13 · Phase 4 — Export &amp; Run</div>
+        <div class="card-title">CLI Runner + Cron</div>
+        <div class="card-desc">Main entry point with argparse CLI, progress reporting, and scheduled execution support.</div>
+        <div style="margin-top:10px"><span class="badge b-p4">Phase 4</span><span class="badge b-free">argparse</span></div>
+      </div>
+    </div>
+    <div class="prompt-box">
+      <div class="prompt-box-header">
+        <span class="prompt-box-label">prompt_13_cli_runner.txt</span>
+        <button class="copy-btn" onclick="copyPrompt(13,this)">&#x2398; Copy</button>
+      </div>
+      <div class="prompt-text" id="pt13">CLI runner specification as defined in the prompt kit.</div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+function show(n, el) {
+  document.querySelectorAll('.prompt-card').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+  document.getElementById('p'+n).classList.add('active');
+  el.classList.add('active');
+}
+
+function copyPrompt(n, btn) {
+  const text = document.getElementById('pt'+n).textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.innerHTML = '&#x2714; Copied';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.innerHTML = '&#x2398; Copy';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+</script>
+</body>
+</html>
