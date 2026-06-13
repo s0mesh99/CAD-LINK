@@ -74,33 +74,10 @@ class DuckDuckGoScraper(BaseScraper):
     def __init__(self):
         super().__init__('duckduckgo_search', min_delay=3.0, max_delay=8.0)
         self.session = requests.Session()
-        self.current_proxy = None
-        self._refresh_proxy()
-
-    def _refresh_proxy(self):
-        from fp.fp import FreeProxy
-        try:
-            self.log.info("Fetching new free proxy...")
-            # We need an elite/anonymous HTTPS proxy that works
-            proxy_url = FreeProxy(https=True, anonym=True, timeout=10).get()
-            self.current_proxy = {'http': proxy_url, 'https': proxy_url}
-            self.log.info(f"Switched to proxy: {proxy_url}")
-            self.session.proxies.update(self.current_proxy)
-        except Exception as e:
-            self.log.warning(f"Failed to get proxy: {e}. Trying any proxy...")
-            try:
-                proxy_url = FreeProxy(timeout=10).get()
-                self.current_proxy = {'http': proxy_url, 'https': proxy_url}
-                self.log.info(f"Switched to fallback proxy: {proxy_url}")
-                self.session.proxies.update(self.current_proxy)
-            except Exception as e2:
-                self.log.error(f"Fallback proxy failed: {e2}. Using direct connection.")
-                self.current_proxy = None
-                self.session.proxies.clear()
 
     def search(self, query: str, max_results: int = 10, retries: int = 3) -> list:
         """
-        POST to DDG HTML endpoint using rotating proxies.
+        POST to DDG HTML endpoint.
         """
         self.limiter.wait(context=query[:40])
         
@@ -113,8 +90,9 @@ class DuckDuckGoScraper(BaseScraper):
                     timeout=15
                 )
                 if resp.status_code == 202 or resp.status_code == 403:
-                    self.log.warning(f"DDG returned {resp.status_code}. Rate limit hit. Refreshing proxy...")
-                    self._refresh_proxy()
+                    self.log.warning(f"DDG returned {resp.status_code}. Rate limit hit. Waiting 60s...")
+                    import time
+                    time.sleep(60)
                     continue
                     
                 if resp.status_code != 200:
@@ -139,12 +117,13 @@ class DuckDuckGoScraper(BaseScraper):
                 return results
 
             except requests.exceptions.Timeout:
-                self.log.error(f"DDG search timeout on proxy {self.current_proxy}. Refreshing proxy...")
-                self._refresh_proxy()
+                self.log.error("DDG search timeout. Waiting 30s...")
+                import time
+                time.sleep(30)
             except Exception as e:
-                self.log.error(f"DDG search error: {e}. Refreshing proxy...")
-                self._refresh_proxy()
-                
+                self.log.error(f"DDG search error: {e}. Waiting 30s...")
+                import time
+                time.sleep(30)
         self.errors += 1
         return []
 
