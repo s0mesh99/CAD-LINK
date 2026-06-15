@@ -34,20 +34,19 @@ def run_scrapers():
     
     print("\n=== SCRAPING PIPELINE COMPLETE ===")
 
-def pre_send_safety_check(conn, phase: int) -> bool:
+def pre_send_safety_check(db, phase: int) -> bool:
     """
     Run before every --send-emails call.
     Fails loud if anything looks wrong.
     Returns True only if safe to proceed.
     """
     import os
-    from mailer.zoho import get_leads_for_campaign
     ZOHO_EMAIL = os.environ.get('ZOHO_EMAIL', '')
 
     errors = []
 
     # Check 1: leads exist for this phase
-    leads = get_leads_for_campaign(conn, phase, limit=1)
+    leads = db.get_leads_for_campaign(phase, limit=1)
     if not leads:
         errors.append(
             "NO LEADS FOUND for this phase. "
@@ -112,18 +111,15 @@ if __name__ == '__main__':
         run_scrapers()
         
     if args.send_emails:
-        import sqlite3
-        from db.schema import DB_PATH
-        conn = sqlite3.connect(DB_PATH)
-        conn.row_factory = sqlite3.Row
-        if pre_send_safety_check(conn, args.phase):
+        from db.client import DatabaseClient
+        db = DatabaseClient()
+        if pre_send_safety_check(db, args.phase):
             from mailer.zoho import send_campaign
             send_campaign(
                 phase=args.phase,
                 limit=args.email_limit,
                 dry_run=args.dry_run
             )
-        conn.close()
         
     if args.status:
         show_stats()

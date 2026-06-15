@@ -1,18 +1,22 @@
-import sqlite3
 import pandas as pd
 import os
 from datetime import datetime
+from db.client import DatabaseClient
 
-DB_PATH = 'cadlink.db'
 EXPORT_PATH = f'cadlink_leads_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
 
 def export_to_excel():
-    print(f"Connecting to {DB_PATH}...")
-    conn = sqlite3.connect(DB_PATH)
+    print(f"Connecting to Supabase...")
+    db = DatabaseClient()
     
     print("Reading data from 'companies' table...")
-    # Read all columns from the companies table
-    df = pd.read_sql_query("SELECT * FROM companies", conn)
+    companies = db.get_companies()
+    
+    if not companies:
+        print("No companies found or failed to connect.")
+        return
+        
+    df = pd.DataFrame(companies)
     
     # Sort by quality score (highest first) or created_at
     if 'quality_score' in df.columns:
@@ -25,7 +29,6 @@ def export_to_excel():
     df.to_excel(EXPORT_PATH, index=False, engine='openpyxl')
     
     print("Export complete!")
-    conn.close()
 
 if __name__ == '__main__':
     export_to_excel()

@@ -1,25 +1,17 @@
 from flask import Flask, request, send_file, redirect
-import sqlite3
 import io
 import datetime
 from PIL import Image
+from db.client import DatabaseClient
 
 app = Flask(__name__)
-DB_PATH = 'cadlink.db'  # Persistent SQLite database path
 
 @app.route('/pixel/<int:lead_id>.png')
 def track_open(lead_id):
     """Tracks when an email is opened by loading a 1x1 transparent PNG."""
     try:
-        conn = sqlite3.connect(DB_PATH)
-        conn.execute('''
-            UPDATE email_tracking 
-            SET opened_at = COALESCE(opened_at, ?),
-                open_count = open_count + 1
-            WHERE company_id = ?
-        ''', (datetime.datetime.now(), lead_id))
-        conn.commit()
-        conn.close()
+        db = DatabaseClient()
+        db.track_email_open(lead_id)
     except Exception as e:
         print(f"Tracking error: {e}")
         
@@ -34,14 +26,8 @@ def track_open(lead_id):
 def track_click(lead_id):
     """Tracks when a user clicks the CTA button, then redirects them to cadlink.in."""
     try:
-        conn = sqlite3.connect(DB_PATH)
-        conn.execute('''
-            UPDATE email_tracking 
-            SET replied = 1
-            WHERE company_id = ?
-        ''', (lead_id,))
-        conn.commit()
-        conn.close()
+        db = DatabaseClient()
+        db.track_email_click(lead_id)
     except Exception as e:
         print(f"Tracking error: {e}")
         
@@ -51,25 +37,9 @@ def track_click(lead_id):
 def show_stats():
     """Simple dashboard endpoint to show email campaign performance."""
     try:
-        conn = sqlite3.connect(DB_PATH)
-        stats = conn.execute('''
-            SELECT 
-                COUNT(*) as total_sent,
-                COUNT(opened_at) as total_opened,
-                SUM(open_count) as total_opens,
-                COUNT(CASE WHEN replied=1 THEN 1 END) as total_replies,
-                ROUND(COUNT(opened_at)*100.0/MAX(COUNT(*), 1), 1) as open_rate
-            FROM email_tracking
-        ''').fetchone()
-        conn.close()
-        
-        return {
-            'total_sent': stats[0] or 0,
-            'unique_opens': stats[1] or 0,
-            'total_opens': stats[2] or 0,
-            'total_clicks': stats[3] or 0,
-            'open_rate': f"{stats[4] or 0.0}%"
-        }
+        db = DatabaseClient()
+        stats = db.get_tracking_stats()
+        return stats
     except Exception as e:
         return {"error": str(e)}
 

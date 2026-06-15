@@ -1,67 +1,12 @@
-import smtplib, sqlite3, logging
+import smtplib, logging
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from datetime import datetime, timedelta
 from mailer.templates import render_template, select_template
-from db.schema import DB_PATH
+from db.client import DatabaseClient
 
 ZOHO_SMTP_HOST = 'smtp.zoho.in'
 ZOHO_SMTP_PORT = 465
-
-def get_leads_for_campaign(conn, phase: int, limit: int) -> list:
-    """
-    Phase 1: quality_score >= 8, country in high-value list
-    Phase 2: quality_score >= 7, region = India
-    Phase 3: quality_score >= 5, any country
-    Only leads never contacted before (not in email_tracking).
-    Only leads with a valid email address.
-    """
-    phase_filters = {
-        1: """
-            AND (country IN (
-                'United Arab Emirates', 'UAE', 'Saudi Arabia',
-                'Qatar', 'Oman', 'Kuwait', 'Bahrain'
-            ) OR quality_score >= 8)
-        """,
-        2: """
-            AND (region = 'India' OR country = 'India')
-            AND quality_score >= 6
-        """,
-        3: """
-            AND quality_score >= 5
-        """,
-    }
-
-    query = f"""
-        SELECT
-            c.id,
-            c.name,
-            c.domain,
-            c.email_1 as email,
-            c.contact_name,
-            c.contact_title,
-            c.contact_email,
-            c.country,
-            c.region,
-            c.sector,
-            c.has_active_tender,
-            c.tender_description,
-            c.quality_score
-        FROM companies c
-        LEFT JOIN email_tracking et ON et.company_id = c.id
-        WHERE et.id IS NULL
-        AND (
-            c.contact_email IS NOT NULL AND c.contact_email != ''
-            OR c.email_1 IS NOT NULL AND c.email_1 != ''
-        )
-        AND c.name NOT LIKE '%Test%'
-        AND c.name NOT LIKE '%Example%'
-        {phase_filters.get(phase, '')}
-        ORDER BY c.quality_score DESC, c.has_active_tender DESC
-        LIMIT ?
-    """
-
-    return conn.execute(query, (limit,)).fetchall()
 
 def plain_to_html(plain_text: str, pixel_url: str) -> str:
     """
@@ -107,9 +52,8 @@ def send_campaign(phase: int = 1, limit: int = 20,
     ZOHO_EMAIL    = os.environ.get('ZOHO_EMAIL', 'somesh.nammina@cadlink.in')
     ZOHO_PASSWORD = os.environ.get('ZOHO_APP_PASSWORD', 'bFZp0iNjXYk7')
 
-    conn  = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    leads = get_leads_for_campaign(conn, phase, limit)
+    db = DatabaseClient()
+    leads = db.get_leads_for_campaign(phase, limit)
 
     if not leads:
         logging.warning("No leads found for this phase. "
@@ -125,7 +69,7 @@ def send_campaign(phase: int = 1, limit: int = 20,
 
         # Get recipient
         recipient = (lead.get('contact_email') or
-                     lead.get('email') or '')
+                     lead.get('email_1') or lead.get('email') or '')
         if not recipient or '@' not in recipient:
             logging.warning(
                 f"No valid email for {lead.get('name')} — skip"
@@ -191,23 +135,7 @@ def send_campaign(phase: int = 1, limit: int = 20,
                               msg.as_string())
 
             # Log to email_tracking
-            follow_up_due = (
-                datetime.now() + timedelta(days=7)
-            ).isoformat()
-            conn.execute('''
-                INSERT INTO email_tracking
-                (company_id, recipient_email, recipient_name,
-                 subject, sent_at, follow_up_due, campaign_phase)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                lead['id'], recipient,
-                lead.get('contact_name', ''),
-                subject_rendered,
-                datetime.now().isoformat(),
-                follow_up_due,
-                phase,
-            ))
-            conn.commit()
+            db.log_email_sent(lead['id'], recipient, lead.get('contact_name', ''), subject_rendered, phase)
 
             sent += 1
             logging.info(
@@ -221,8 +149,6 @@ def send_campaign(phase: int = 1, limit: int = 20,
             )
 
     logging.info(f"Campaign complete. Sent: {sent}/{len(leads)}")
-    conn.close()
-
 
 def send_follow_ups(dry_run: bool = False):
     """
@@ -233,25 +159,12 @@ def send_follow_ups(dry_run: bool = False):
     - Optionally: opened the email (prioritize openers first)
     """
     import os
-    conn  = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
+    db = DatabaseClient()
     
     ZOHO_EMAIL    = os.environ.get('ZOHO_EMAIL', 'somesh.nammina@cadlink.in')
     ZOHO_PASSWORD = os.environ.get('ZOHO_APP_PASSWORD', 'bFZp0iNjXYk7')
 
-    due = conn.execute('''
-        SELECT et.*, c.name, c.country, c.region,
-               c.has_active_tender, c.tender_description,
-               c.contact_name, c.email, c.contact_email
-        FROM email_tracking et
-        JOIN companies c ON c.id = et.company_id
-        WHERE et.replied = 0
-        AND et.follow_up_sent = 0
-        AND et.bounced = 0
-        AND et.follow_up_due <= datetime('now')
-        ORDER BY et.open_count DESC, et.sent_at ASC
-        LIMIT 20
-    ''').fetchall()
+    due = db.get_due_follow_ups(limit=20)
 
     logging.info(f"Follow-ups due: {len(due)}")
 
@@ -260,7 +173,7 @@ def send_follow_ups(dry_run: bool = False):
         lead['id'] = lead['company_id']
 
         recipient = (lead.get('contact_email') or
-                     lead.get('email') or '')
+                     lead.get('email_1') or lead.get('email') or '')
         if not recipient:
             continue
 
@@ -270,7 +183,7 @@ def send_follow_ups(dry_run: bool = False):
         body = render_template(body_template, lead)
 
         if dry_run:
-            print(f"FOLLOW-UP → {lead['name']} <{recipient}>")
+            print(f"FOLLOW-UP → {lead.get('name', 'Unknown')} <{recipient}>")
             print(body)
             continue
 
@@ -294,14 +207,8 @@ def send_follow_ups(dry_run: bool = False):
                 smtp.login(ZOHO_EMAIL, ZOHO_PASSWORD)
                 smtp.sendmail(ZOHO_EMAIL, recipient, msg.as_string())
 
-            conn.execute('''
-                UPDATE email_tracking
-                SET follow_up_sent = 1
-                WHERE id = ?
-            ''', (row['id'],))
-            conn.commit()
-            logging.info(f"✅ Follow-up sent: {lead['name']}")
+            db.mark_follow_up_sent(row['id'])
+            logging.info(f"✅ Follow-up sent: {lead.get('name', 'Unknown')}")
         except smtplib.SMTPException as e:
-            logging.error(f"SMTP error for {lead['name']}: {e}")
+            logging.error(f"SMTP error for {lead.get('name', 'Unknown')}: {e}")
 
-    conn.close()
