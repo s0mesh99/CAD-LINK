@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+@theme {
+  --color-cadlink: #1F7A62;
+  --color-cadlink-dark: #145543;
+}
+
+body {
+  margin: 0;
+  font-family: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: #0f172a; /* slate-900 */
+  color: #f8fafc; /* slate-50 */
+}
