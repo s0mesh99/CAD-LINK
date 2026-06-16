@@ -8,6 +8,6 @@
 body {
   margin: 0;
   font-family: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
-  background-color: #0f172a; /* slate-900 */
-  color: #f8fafc; /* slate-50 */
+  background-color: #f4f5f7;
+  color: #0f172a;
 }
