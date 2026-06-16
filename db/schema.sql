@@ -1,6 +1,6 @@
 -- ──────────────────────────────────────────────
--- CAD LINK — Supabase Schema (PostgreSQL)
--- Run this in the Supabase SQL Editor
+-- CAD LINK — Supabase Schema (PostgreSQL) V1.3
+-- Run this in the Supabase SQL Editor to initialize or reset your database.
 -- ──────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS companies (
@@ -55,3 +55,36 @@ CREATE TRIGGER trigger_updated_at
     BEFORE UPDATE ON companies
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
+
+-- Email Tracking
+CREATE TABLE IF NOT EXISTS email_tracking (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
+    recipient_email TEXT NOT NULL,
+    recipient_name TEXT,
+    subject TEXT NOT NULL,
+    
+    -- Track events
+    sent_at TIMESTAMPTZ DEFAULT NOW(),
+    opened_at TIMESTAMPTZ,
+    open_count INTEGER DEFAULT 0,
+    replied INTEGER DEFAULT 0,
+    
+    -- Follow-up logic
+    follow_up_due TIMESTAMPTZ,
+    follow_up_sent INTEGER DEFAULT 0,
+    campaign_phase INTEGER DEFAULT 1,
+    bounced INTEGER DEFAULT 0
+);
+
+-- Scraper Runs
+CREATE TABLE IF NOT EXISTS scraper_runs (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    scraper_name TEXT NOT NULL,
+    status TEXT NOT NULL,
+    records_found INTEGER DEFAULT 0,
+    new_leads_added INTEGER DEFAULT 0,
+    error_message TEXT,
+    started_at TIMESTAMPTZ DEFAULT NOW(),
+    completed_at TIMESTAMPTZ DEFAULT NOW()
+);
