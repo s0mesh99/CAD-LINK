@@ -19,6 +19,9 @@ export function DashboardOverview() {
 
   // Leads State & Filters
   const [searchLeads, setSearchLeads] = useState('');
+  const [filterQuality, setFilterQuality] = useState('all');
+  const [filterCountry, setFilterCountry] = useState('all');
+  const [filterSector, setFilterSector] = useState('all');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectedLead, setSelectedLead] = useState<any | null>(null);
 
@@ -46,12 +49,12 @@ export function DashboardOverview() {
     const { data: runsData } = await supabase.from('scraper_runs').select('*').order('started_at', { ascending: false }).limit(5);
     setRuns(runsData || []);
 
-    // Leads
-    const { data: leadsData } = await supabase.from('companies').select('*').order('created_at', { ascending: false }).limit(200);
+    // Leads (increased limit)
+    const { data: leadsData } = await supabase.from('companies').select('*').order('created_at', { ascending: false }).limit(5000);
     setLeads(leadsData || []);
 
     // Emails
-    const { data: emailsData } = await supabase.from('email_tracking').select(`*, companies ( name, domain )`).order('sent_at', { ascending: false }).limit(50);
+    const { data: emailsData } = await supabase.from('email_tracking').select(`*, companies ( name, domain )`).order('sent_at', { ascending: false }).limit(100);
     setEmails(emailsData || []);
 
     setLoading(false);
@@ -126,10 +129,19 @@ export function DashboardOverview() {
     document.body.removeChild(link);
   }
 
-  const filteredLeads = leads.filter(l => 
-    l.name?.toLowerCase().includes(searchLeads.toLowerCase()) || 
-    l.domain?.toLowerCase().includes(searchLeads.toLowerCase())
-  );
+  const filteredLeads = leads.filter(l => {
+    const matchesSearch = l.name?.toLowerCase().includes(searchLeads.toLowerCase()) || l.domain?.toLowerCase().includes(searchLeads.toLowerCase());
+    const matchesQuality = filterQuality === 'all' ? true :
+                           filterQuality === 'premium' ? l.quality_score >= 3 :
+                           filterQuality === 'standard' ? l.quality_score < 3 : true;
+    const matchesCountry = filterCountry === 'all' ? true : l.country === filterCountry;
+    const matchesSector = filterSector === 'all' ? true : l.sector === filterSector;
+    return matchesSearch && matchesQuality && matchesCountry && matchesSector;
+  });
+
+  // Extract unique countries and sectors for filter dropdowns
+  const countries = Array.from(new Set(leads.map(l => l.country).filter(Boolean))).sort();
+  const sectors = Array.from(new Set(leads.map(l => l.sector).filter(Boolean))).sort();
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -149,15 +161,35 @@ export function DashboardOverview() {
           
           <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
             <div className="p-5 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <h2 className="text-lg font-bold text-slate-800">Lead Database</h2>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold text-slate-800">Lead Database</h2>
+                <span className="text-xs font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{filteredLeads.length}</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input 
                     type="text" placeholder="Search leads..." value={searchLeads} onChange={e => setSearchLeads(e.target.value)}
-                    className="bg-white border border-slate-300 rounded-md pl-9 pr-3 py-1.5 text-sm focus:outline-none focus:border-[#0F766E] focus:ring-1 focus:ring-[#0F766E] w-64"
+                    className="bg-white border border-slate-300 rounded-md pl-9 pr-3 py-1.5 text-sm focus:outline-none focus:border-[#0F766E] focus:ring-1 focus:ring-[#0F766E] w-48"
                   />
                 </div>
+                
+                <select value={filterQuality} onChange={e => setFilterQuality(e.target.value)} className="border border-slate-300 rounded-md px-2 py-1.5 text-sm bg-white focus:outline-none focus:border-[#0F766E]">
+                  <option value="all">All Quality</option>
+                  <option value="premium">Premium (3+)</option>
+                  <option value="standard">Standard (&lt;3)</option>
+                </select>
+
+                <select value={filterCountry} onChange={e => setFilterCountry(e.target.value)} className="border border-slate-300 rounded-md px-2 py-1.5 text-sm bg-white focus:outline-none focus:border-[#0F766E] max-w-[120px]">
+                  <option value="all">All Countries</option>
+                  {countries.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+
+                <select value={filterSector} onChange={e => setFilterSector(e.target.value)} className="border border-slate-300 rounded-md px-2 py-1.5 text-sm bg-white focus:outline-none focus:border-[#0F766E] max-w-[120px]">
+                  <option value="all">All Sectors</option>
+                  {sectors.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+
                 <button onClick={handleExportCSV} className="border border-slate-300 hover:bg-slate-50 text-slate-700 px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2 transition-colors">
                   <Download className="w-4 h-4" /> Export
                 </button>
