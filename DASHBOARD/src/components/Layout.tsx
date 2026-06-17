@@ -1,23 +1,59 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { Database, Users } from 'lucide-react';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function Layout({ children }: { children: React.ReactNode }) {
+export function Layout({ 
+  children, 
+  currentTab = 'scrapers', 
+  setCurrentTab 
+}: { 
+  children: React.ReactNode,
+  currentTab?: 'scrapers' | 'leads',
+  setCurrentTab?: (tab: 'scrapers' | 'leads') => void
+}) {
   return (
     <div className="min-h-screen bg-[#f4f5f7] text-slate-800 font-sans selection:bg-[#0F766E]/20">
       {/* Top Navigation Bar */}
       <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-6 sticky top-0 z-50 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="text-2xl font-bold tracking-tight">
-            <span className="text-slate-900">CAD</span>
-            <span className="text-[#0F766E]">Link</span>
+        <div className="flex items-center gap-8">
+          <div className="flex items-center gap-3">
+            <div className="text-2xl font-bold tracking-tight">
+              <span className="text-slate-900">CAD</span>
+              <span className="text-[#0F766E]">Link</span>
+            </div>
+            <div className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-full uppercase tracking-wider ml-1">
+              ADMIN
+            </div>
           </div>
-          <div className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-full uppercase tracking-wider ml-1">
-            ADMIN
-          </div>
+
+          {setCurrentTab && (
+            <nav className="hidden md:flex items-center gap-2">
+              <button 
+                onClick={() => setCurrentTab('scrapers')}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
+                  currentTab === 'scrapers' ? "bg-slate-100 text-slate-900" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                )}
+              >
+                <Database className="w-4 h-4" />
+                Scrapers
+              </button>
+              <button 
+                onClick={() => setCurrentTab('leads')}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
+                  currentTab === 'leads' ? "bg-slate-100 text-slate-900" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                )}
+              >
+                <Users className="w-4 h-4" />
+                Inbound Leads
+              </button>
+            </nav>
+          )}
         </div>
 
         <div>

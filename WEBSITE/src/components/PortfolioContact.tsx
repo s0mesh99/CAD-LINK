@@ -1,5 +1,7 @@
 import { motion } from 'motion/react';
-import { Mail, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Mail, ArrowRight, CheckCircle2, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { supabase } from '../lib/supabase';
 
 export function PortfolioSection() {
   const projects = [
@@ -107,6 +109,34 @@ export function TestimonialsSection() {
 }
 
 export function ContactSection() {
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [formData, setFormData] = useState({ name: '', email: '', message: '' });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name || !formData.email) return;
+
+    setStatus('loading');
+    
+    try {
+      const { error } = await supabase
+        .from('website_leads')
+        .insert([{
+          name: formData.name,
+          email: formData.email,
+          message: formData.message,
+          source: 'Website Contact Form'
+        }]);
+
+      if (error) throw error;
+      setStatus('success');
+      setFormData({ name: '', email: '', message: '' });
+    } catch (err) {
+      console.error('Error submitting form:', err);
+      setStatus('error');
+    }
+  };
+
   return (
     <section id="contact" className="py-24 relative overflow-hidden bg-slate-900 text-white">
       {/* Animated Background Glow */}
@@ -137,34 +167,88 @@ export function ContactSection() {
             Test my CAD execution entirely risk-free. Send a spec, and I'll deliver the first drawing at no cost to prove the quality of my work.
           </p>
 
-          <form className="glass-card-dark rounded-3xl p-8 sm:p-12 max-w-2xl mx-auto text-left relative overflow-hidden border border-slate-700/50 shadow-2xl">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
-              <motion.div whileFocus={{ scale: 1.02 }} className="transition-transform">
-                <label className="block text-sm font-medium text-slate-400 mb-2 ml-1">Name</label>
-                <input type="text" className="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cadlink-500 focus:ring-1 focus:ring-cadlink-500 transition-colors shadow-inner" placeholder="John Doe" />
+          <form onSubmit={handleSubmit} className="glass-card-dark rounded-3xl p-8 sm:p-12 max-w-2xl mx-auto text-left relative overflow-hidden border border-slate-700/50 shadow-2xl">
+            {status === 'success' ? (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="text-center py-12"
+              >
+                <div className="w-16 h-16 bg-cadlink-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <CheckCircle2 className="h-8 w-8 text-cadlink-400" />
+                </div>
+                <h3 className="text-2xl font-bold mb-2">Request Received!</h3>
+                <p className="text-slate-400">I'll review your details and get back to you within 2-4 hours to begin your free trial draft.</p>
+                <button 
+                  type="button"
+                  onClick={() => setStatus('idle')}
+                  className="mt-8 text-cadlink-400 font-medium hover:text-cadlink-300 transition-colors"
+                >
+                  Send another message
+                </button>
               </motion.div>
-              <motion.div whileFocus={{ scale: 1.02 }} className="transition-transform">
-                <label className="block text-sm font-medium text-slate-400 mb-2 ml-1">Email</label>
-                <input type="email" className="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cadlink-500 focus:ring-1 focus:ring-cadlink-500 transition-colors shadow-inner" placeholder="john@epcfirm.com" />
-              </motion.div>
-            </div>
-            <motion.div whileFocus={{ scale: 1.01 }} className="mb-8 transition-transform">
-              <label className="block text-sm font-medium text-slate-400 mb-2 ml-1">Message (Optional)</label>
-              <textarea rows={4} className="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cadlink-500 focus:ring-1 focus:ring-cadlink-500 transition-colors resize-none shadow-inner" placeholder="We need some overflow support for an upcoming structural project..."></textarea>
-            </motion.div>
-            
-            <motion.button 
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              type="button" 
-              className="w-full bg-cadlink-600 hover:bg-cadlink-500 text-white font-bold py-4 px-8 rounded-xl transition-colors shadow-[0_0_20px_rgba(31,122,98,0.4)] hover:shadow-[0_0_30px_rgba(31,122,98,0.6)] flex justify-center items-center text-lg"
-            >
-              Request Free Sample Drawing <ArrowRight className="ml-2 h-5 w-5" />
-            </motion.button>
-            
-            <div className="mt-6 flex items-center justify-center text-sm text-slate-400 font-medium">
-              <CheckCircle2 className="h-4 w-4 text-cadlink-500 mr-2" /> Usually responds within 2-4 hours.
-            </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
+                  <motion.div whileFocus={{ scale: 1.02 }} className="transition-transform">
+                    <label className="block text-sm font-medium text-slate-400 mb-2 ml-1">Name</label>
+                    <input 
+                      required
+                      type="text" 
+                      value={formData.name}
+                      onChange={e => setFormData({...formData, name: e.target.value})}
+                      className="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cadlink-500 focus:ring-1 focus:ring-cadlink-500 transition-colors shadow-inner" 
+                      placeholder="John Doe" 
+                    />
+                  </motion.div>
+                  <motion.div whileFocus={{ scale: 1.02 }} className="transition-transform">
+                    <label className="block text-sm font-medium text-slate-400 mb-2 ml-1">Email</label>
+                    <input 
+                      required
+                      type="email" 
+                      value={formData.email}
+                      onChange={e => setFormData({...formData, email: e.target.value})}
+                      className="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cadlink-500 focus:ring-1 focus:ring-cadlink-500 transition-colors shadow-inner" 
+                      placeholder="john@epcfirm.com" 
+                    />
+                  </motion.div>
+                </div>
+                <motion.div whileFocus={{ scale: 1.01 }} className="mb-8 transition-transform">
+                  <label className="block text-sm font-medium text-slate-400 mb-2 ml-1">Message (Optional)</label>
+                  <textarea 
+                    rows={4} 
+                    value={formData.message}
+                    onChange={e => setFormData({...formData, message: e.target.value})}
+                    className="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cadlink-500 focus:ring-1 focus:ring-cadlink-500 transition-colors resize-none shadow-inner" 
+                    placeholder="We need some overflow support for an upcoming structural project..."
+                  ></textarea>
+                </motion.div>
+                
+                {status === 'error' && (
+                  <div className="mb-6 p-4 bg-red-500/10 border border-red-500/50 rounded-xl text-red-400 text-sm">
+                    There was an error sending your message. Please try again.
+                  </div>
+                )}
+                
+                <motion.button 
+                  disabled={status === 'loading'}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  type="submit" 
+                  className="w-full bg-cadlink-600 hover:bg-cadlink-500 text-white font-bold py-4 px-8 rounded-xl transition-colors shadow-[0_0_20px_rgba(31,122,98,0.4)] hover:shadow-[0_0_30px_rgba(31,122,98,0.6)] flex justify-center items-center text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {status === 'loading' ? (
+                    <><Loader2 className="animate-spin mr-2 h-5 w-5" /> Sending...</>
+                  ) : (
+                    <>Request Free Sample Drawing <ArrowRight className="ml-2 h-5 w-5" /></>
+                  )}
+                </motion.button>
+                
+                <div className="mt-6 flex items-center justify-center text-sm text-slate-400 font-medium">
+                  <CheckCircle2 className="h-4 w-4 text-cadlink-500 mr-2" /> Usually responds within 2-4 hours.
+                </div>
+              </>
+            )}
           </form>
         </motion.div>
       </div>
