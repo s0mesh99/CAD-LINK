@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '../supabaseClient';
 import { 
   Mail, Bot, Play, CheckCircle2, XCircle, 
-  Search, Trash2, Edit2, Send, Download, ExternalLink, X 
+  Search, Trash2, Edit2, Send, Download, ExternalLink, X, BarChart3
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -110,12 +110,15 @@ export function DashboardOverview() {
 
   function handleExportCSV() {
     if (leads.length === 0) return;
-    const headers = ['Company', 'Domain', 'Country', 'Sector', 'Contact Name', 'Contact Email', 'Phone', 'Quality Score'];
+    const headers = ['Company', 'Domain', 'Country', 'City', 'Region', 'Sector', 'Sub Sector', 'Contact Name', 'Contact Title', 'Contact Email 1', 'Contact Email 2', 'Phone', 'Employee Size', 'Revenue Range', 'Source', 'Active Tender', 'Quality Score'];
     const csvContent = [
       headers.join(','),
       ...leads.map(l => [
-        `"${l.name || ''}"`, `"${l.domain || ''}"`, `"${l.country || ''}"`, `"${l.sector || ''}"`,
-        `"${l.contact_name || ''}"`, `"${l.contact_email || l.email_1 || ''}"`, `"${l.phone || ''}"`, l.quality_score
+        `"${l.name || ''}"`, `"${l.domain || ''}"`, `"${l.country || ''}"`, `"${l.city || ''}"`, `"${l.region || ''}"`, 
+        `"${l.sector || ''}"`, `"${l.sub_sector || ''}"`, `"${l.contact_name || ''}"`, `"${l.contact_title || ''}"`, 
+        `"${l.contact_email || l.email_1 || l.email || ''}"`, `"${l.email_2 || ''}"`, `"${l.phone || ''}"`, 
+        `"${l.employee_count || l.employee_size || ''}"`, `"${l.revenue_range || ''}"`, `"${l.source_method || l.source || ''}"`, 
+        l.has_active_tender ? 'Yes' : 'No', l.quality_score
       ].join(','))
     ].join('\n');
     
@@ -143,6 +146,25 @@ export function DashboardOverview() {
   const countries = Array.from(new Set(leads.map(l => l.country).filter(Boolean))).sort();
   const sectors = Array.from(new Set(leads.map(l => l.sector).filter(Boolean))).sort();
 
+  const scraperStats = useMemo(() => {
+    const stats: Record<string, { name: string; count: number; totalScore: number }> = {};
+    leads.forEach(l => {
+      const source = l.source_method || l.source || 'unknown';
+      if (!stats[source]) {
+        stats[source] = { name: source, count: 0, totalScore: 0 };
+      }
+      stats[source].count += 1;
+      stats[source].totalScore += (l.quality_score || 0);
+    });
+    
+    return Object.values(stats)
+      .map(s => ({
+        ...s,
+        avgScore: s.count > 0 ? (s.totalScore / s.count).toFixed(1) : 0
+      }))
+      .sort((a, b) => b.count - a.count);
+  }, [leads]);
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       
@@ -154,125 +176,152 @@ export function DashboardOverview() {
         <StatCard title="Bounced Emails" value={stats.bouncedEmails} valueColor="text-red-600" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="space-y-8">
         
-        {/* 2. MAIN CRM TABLE (Takes up 2/3 width) */}
-        <div className="lg:col-span-2 space-y-6">
-          
-          <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-            <div className="p-5 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold text-slate-800">Lead Database</h2>
-                <span className="text-xs font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{filteredLeads.length}</span>
-              </div>
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input 
-                    type="text" placeholder="Search leads..." value={searchLeads} onChange={e => setSearchLeads(e.target.value)}
-                    className="bg-white border border-slate-300 rounded-md pl-9 pr-3 py-1.5 text-sm focus:outline-none focus:border-[#0F766E] focus:ring-1 focus:ring-[#0F766E] w-48"
-                  />
-                </div>
-                
-                <select value={filterQuality} onChange={e => setFilterQuality(e.target.value)} className="border border-slate-300 rounded-md px-2 py-1.5 text-sm bg-white focus:outline-none focus:border-[#0F766E]">
-                  <option value="all">All Quality</option>
-                  <option value="premium">Premium (3+)</option>
-                  <option value="standard">Standard (&lt;3)</option>
-                </select>
-
-                <select value={filterCountry} onChange={e => setFilterCountry(e.target.value)} className="border border-slate-300 rounded-md px-2 py-1.5 text-sm bg-white focus:outline-none focus:border-[#0F766E] max-w-[120px]">
-                  <option value="all">All Countries</option>
-                  {countries.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-
-                <select value={filterSector} onChange={e => setFilterSector(e.target.value)} className="border border-slate-300 rounded-md px-2 py-1.5 text-sm bg-white focus:outline-none focus:border-[#0F766E] max-w-[120px]">
-                  <option value="all">All Sectors</option>
-                  {sectors.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-
-                <button onClick={handleExportCSV} className="border border-slate-300 hover:bg-slate-50 text-slate-700 px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2 transition-colors">
-                  <Download className="w-4 h-4" /> Export
-                </button>
-                {selectedIds.size > 0 && (
-                  <button onClick={handleBulkDeleteLeads} className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2 transition-colors">
-                    <Trash2 className="w-4 h-4" /> Delete ({selectedIds.size})
-                  </button>
-                )}
-              </div>
+        {/* 2. MAIN CRM TABLE (Full Width) */}
+        <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+          <div className="p-5 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-bold text-slate-800">Lead Database</h2>
+              <span className="text-xs font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{filteredLeads.length}</span>
             </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input 
+                  type="text" placeholder="Search leads..." value={searchLeads} onChange={e => setSearchLeads(e.target.value)}
+                  className="bg-white border border-slate-300 rounded-md pl-9 pr-3 py-1.5 text-sm focus:outline-none focus:border-[#0F766E] focus:ring-1 focus:ring-[#0F766E] w-48"
+                />
+              </div>
+              
+              <select value={filterQuality} onChange={e => setFilterQuality(e.target.value)} className="border border-slate-300 rounded-md px-2 py-1.5 text-sm bg-white focus:outline-none focus:border-[#0F766E]">
+                <option value="all">All Quality</option>
+                <option value="premium">Premium (3+)</option>
+                <option value="standard">Standard (&lt;3)</option>
+              </select>
 
-            <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
-              <table className="w-full text-left text-sm whitespace-nowrap">
-                <thead className="bg-slate-50 border-b border-slate-200 sticky top-0 z-10">
-                  <tr className="text-slate-500 font-semibold tracking-wide">
-                    <th className="p-3 pl-5 w-10">
+              <select value={filterCountry} onChange={e => setFilterCountry(e.target.value)} className="border border-slate-300 rounded-md px-2 py-1.5 text-sm bg-white focus:outline-none focus:border-[#0F766E] max-w-[120px]">
+                <option value="all">All Countries</option>
+                {countries.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+
+              <select value={filterSector} onChange={e => setFilterSector(e.target.value)} className="border border-slate-300 rounded-md px-2 py-1.5 text-sm bg-white focus:outline-none focus:border-[#0F766E] max-w-[120px]">
+                <option value="all">All Sectors</option>
+                {sectors.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+
+              <button onClick={handleExportCSV} className="border border-slate-300 hover:bg-slate-50 text-slate-700 px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2 transition-colors">
+                <Download className="w-4 h-4" /> Export
+              </button>
+              {selectedIds.size > 0 && (
+                <button onClick={handleBulkDeleteLeads} className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2 transition-colors">
+                  <Trash2 className="w-4 h-4" /> Delete ({selectedIds.size})
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
+            <table className="w-full text-left text-sm whitespace-nowrap">
+              <thead className="bg-slate-50 border-b border-slate-200 sticky top-0 z-10">
+                <tr className="text-slate-500 font-semibold tracking-wide text-xs uppercase">
+                  <th className="p-3 pl-5 w-10">
+                    <input 
+                      type="checkbox" 
+                      checked={selectedIds.size === filteredLeads.length && filteredLeads.length > 0}
+                      onChange={() => {
+                        if (selectedIds.size === filteredLeads.length) setSelectedIds(new Set());
+                        else setSelectedIds(new Set(filteredLeads.map(l => l.id)));
+                      }}
+                      className="rounded border-slate-300 text-[#0F766E] focus:ring-[#0F766E]"
+                    />
+                  </th>
+                  <th className="p-3 whitespace-nowrap">Company & Domain</th>
+                  <th className="p-3 whitespace-nowrap">Location</th>
+                  <th className="p-3 whitespace-nowrap">Industry</th>
+                  <th className="p-3 whitespace-nowrap">Contact Info</th>
+                  <th className="p-3 whitespace-nowrap">Size / Revenue</th>
+                  <th className="p-3 whitespace-nowrap">Source Info</th>
+                  <th className="p-3 whitespace-nowrap text-center">Score</th>
+                  <th className="p-3 text-right pr-5 whitespace-nowrap">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {loading ? (
+                  <tr><td colSpan={9} className="p-8 text-center text-slate-500">Loading...</td></tr>
+                ) : filteredLeads.map(lead => (
+                  <tr key={lead.id} className={`hover:bg-slate-50 transition-colors ${selectedIds.has(lead.id) ? 'bg-blue-50/50' : ''}`}>
+                    <td className="p-3 pl-5">
                       <input 
-                        type="checkbox" 
-                        checked={selectedIds.size === filteredLeads.length && filteredLeads.length > 0}
+                        type="checkbox" checked={selectedIds.has(lead.id)}
                         onChange={() => {
-                          if (selectedIds.size === filteredLeads.length) setSelectedIds(new Set());
-                          else setSelectedIds(new Set(filteredLeads.map(l => l.id)));
+                          const newSet = new Set(selectedIds);
+                          if (newSet.has(lead.id)) newSet.delete(lead.id); else newSet.add(lead.id);
+                          setSelectedIds(newSet);
                         }}
                         className="rounded border-slate-300 text-[#0F766E] focus:ring-[#0F766E]"
                       />
-                    </th>
-                    <th className="p-3">Company</th>
-                    <th className="p-3">Contact</th>
-                    <th className="p-3">Score</th>
-                    <th className="p-3 text-right pr-5">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {loading ? (
-                    <tr><td colSpan={5} className="p-8 text-center text-slate-500">Loading...</td></tr>
-                  ) : filteredLeads.map(lead => (
-                    <tr key={lead.id} className={`hover:bg-slate-50 transition-colors ${selectedIds.has(lead.id) ? 'bg-blue-50/50' : ''}`}>
-                      <td className="p-3 pl-5">
-                        <input 
-                          type="checkbox" checked={selectedIds.has(lead.id)}
-                          onChange={() => {
-                            const newSet = new Set(selectedIds);
-                            if (newSet.has(lead.id)) newSet.delete(lead.id); else newSet.add(lead.id);
-                            setSelectedIds(newSet);
-                          }}
-                          className="rounded border-slate-300 text-[#0F766E] focus:ring-[#0F766E]"
-                        />
-                      </td>
-                      <td className="p-3">
-                        <div className="font-semibold text-slate-800">{lead.name}</div>
-                        {lead.domain && <a href={`https://${lead.domain}`} target="_blank" className="text-xs text-blue-600 hover:underline">{lead.domain}</a>}
-                      </td>
-                      <td className="p-3">
-                        {lead.contact_email || lead.email_1 ? (
-                          <div className="flex items-center gap-1.5 text-slate-700">
-                            <Mail className="w-3.5 h-3.5 text-slate-400" /> {lead.contact_email || lead.email_1}
-                          </div>
-                        ) : <span className="text-xs text-slate-400 italic">No email</span>}
-                      </td>
-                      <td className="p-3">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${lead.quality_score >= 3 ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}`}>
-                          {lead.quality_score}
-                        </span>
-                      </td>
-                      <td className="p-3 pr-5 text-right flex items-center justify-end gap-1">
-                        <a href={`https://www.linkedin.com/search/results/companies/?keywords=${encodeURIComponent(lead.name)}`} target="_blank" className="p-1.5 text-slate-400 hover:text-blue-600 rounded hover:bg-slate-100" title="Search LinkedIn">
-                          <ExternalLink className="w-4 h-4" />
+                    </td>
+                    <td className="p-3">
+                      <div className="font-semibold text-slate-800">{lead.name || '-'}</div>
+                      {lead.domain && <a href={`https://${lead.domain}`} target="_blank" className="text-xs text-blue-600 hover:underline">{lead.domain}</a>}
+                    </td>
+                    <td className="p-3 text-sm text-slate-600">
+                      <div>{lead.country || '-'}</div>
+                      <div className="text-xs text-slate-400">{(lead.city || lead.region) ? [lead.city, lead.region].filter(Boolean).join(', ') : ''}</div>
+                    </td>
+                    <td className="p-3 text-sm text-slate-600">
+                      <div>{lead.sector || '-'}</div>
+                      {lead.sub_sector && <div className="text-xs text-slate-400">{lead.sub_sector}</div>}
+                    </td>
+                    <td className="p-3 text-sm">
+                      <div className="font-medium text-slate-700">{lead.contact_name ? `${lead.contact_name} ${lead.contact_title ? `(${lead.contact_title})` : ''}` : 'No Name'}</div>
+                      {(lead.contact_email || lead.email_1 || lead.email) ? (
+                        <div className="flex flex-col gap-0.5 mt-1">
+                          {[lead.contact_email, lead.email_1, lead.email, lead.email_2].filter(Boolean).map((em, idx) => (
+                            <div key={idx} className="flex items-center gap-1.5 text-xs text-slate-600">
+                              <Mail className="w-3 h-3 text-slate-400" /> {em}
+                            </div>
+                          ))}
+                        </div>
+                      ) : <span className="text-xs text-slate-400 italic">No email</span>}
+                      {lead.phone && <div className="text-xs text-slate-500 mt-0.5">📞 {lead.phone}</div>}
+                    </td>
+                    <td className="p-3 text-sm text-slate-600">
+                      <div>{lead.employee_count || lead.employee_size || '-'}</div>
+                      <div className="text-xs text-slate-400">{lead.revenue_range || ''}</div>
+                    </td>
+                    <td className="p-3 text-sm text-slate-600">
+                      <div className="capitalize">{lead.source_method || lead.source || '-'}</div>
+                      {lead.has_active_tender ? <div className="text-xs text-emerald-600 font-bold mt-0.5">Active Tender</div> : null}
+                    </td>
+                    <td className="p-3 text-center">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${lead.quality_score >= 3 ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}`}>
+                        {lead.quality_score}
+                      </span>
+                    </td>
+                    <td className="p-3 pr-5 text-right flex items-center justify-end gap-1">
+                      <a href={`https://www.linkedin.com/search/results/companies/?keywords=${encodeURIComponent(lead.name)}`} target="_blank" className="p-1.5 text-slate-400 hover:text-blue-600 rounded hover:bg-slate-100" title="Search LinkedIn">
+                        <ExternalLink className="w-4 h-4" />
+                      </a>
+                      {(lead.contact_email || lead.email_1 || lead.email) && (
+                        <a href={`mailto:${lead.contact_email || lead.email_1 || lead.email}`} className="p-1.5 text-slate-400 hover:text-[#0F766E] rounded hover:bg-slate-100" title="Email">
+                          <Send className="w-4 h-4" />
                         </a>
-                        {lead.contact_email && (
-                          <a href={`mailto:${lead.contact_email}`} className="p-1.5 text-slate-400 hover:text-[#0F766E] rounded hover:bg-slate-100" title="Email">
-                            <Send className="w-4 h-4" />
-                          </a>
-                        )}
-                        <button onClick={() => setSelectedLead(lead)} className="p-1.5 text-slate-400 hover:text-slate-800 rounded hover:bg-slate-100" title="Edit">
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                      )}
+                      <button onClick={() => setSelectedLead(lead)} className="p-1.5 text-slate-400 hover:text-slate-800 rounded hover:bg-slate-100" title="Edit">
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
+        </div>
+        
+        {/* Split Grid for Bottom Section: Outreach & Diagnostics */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
           {/* 3. EMAILS TABLE */}
           <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
@@ -307,11 +356,35 @@ export function DashboardOverview() {
             </div>
           </div>
 
-        </div>
+          {/* 4. SCRAPER ANALYTICS */}
+          <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6 flex flex-col">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-[#0F766E]" /> Source Quality
+              </h2>
+            </div>
+            <div className="space-y-3 flex-grow overflow-y-auto max-h-[300px]">
+              {scraperStats.length === 0 ? (
+                 <div className="text-slate-400 text-sm italic">No data yet</div>
+              ) : scraperStats.map(stat => (
+                <div key={stat.name} className="p-3 rounded-lg border border-slate-100 bg-slate-50 flex justify-between items-center">
+                  <div>
+                    <div className="text-sm font-semibold text-slate-700 capitalize">{stat.name.replace(/_/g, ' ')}</div>
+                    <div className="text-xs text-slate-500">{stat.count} leads found</div>
+                  </div>
+                  <div className="text-right">
+                    <div className={`text-sm font-bold ${Number(stat.avgScore) >= 5 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                      {stat.avgScore} <span className="text-xs font-normal text-slate-400">/ 10</span>
+                    </div>
+                    <div className="text-[10px] uppercase font-bold text-slate-400">AVG SCORE</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
 
-        {/* 4. SCRAPER DIAGNOSTICS (Right Sidebar Column) */}
-        <div className="space-y-6">
-          <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
+          {/* 4. SCRAPER DIAGNOSTICS (Moved to Bottom Right) */}
+          <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6 flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                 <Bot className="w-5 h-5 text-[#0F766E]" /> Automation
@@ -329,7 +402,7 @@ export function DashboardOverview() {
             )}
 
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Recent Runs</h3>
-            <div className="space-y-3">
+            <div className="space-y-3 flex-grow overflow-y-auto max-h-[300px]">
               {runs.map(run => (
                 <div key={run.id} className="p-3 rounded-lg border border-slate-100 bg-slate-50 flex justify-between items-center">
                   <div>
@@ -344,6 +417,7 @@ export function DashboardOverview() {
               ))}
             </div>
           </div>
+
         </div>
 
       </div>
