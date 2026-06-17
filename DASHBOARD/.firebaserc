@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "cad-link"
+  },
+  "targets": {
+    "cad-link": {
+      "hosting": {
+        "admin": [
+          "cadlink-admin"
+        ]
+      }
+    }
+  }
+}
