@@ -1,13 +1,62 @@
 @import "tailwindcss";
 
 @theme {
-  --color-cadlink: #1F7A62;
-  --color-cadlink-dark: #145543;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  
+  --color-cadlink-50: #E8F2EF;
+  --color-cadlink-100: #d1e5df;
+  --color-cadlink-200: #a3ccbe;
+  --color-cadlink-300: #75b39e;
+  --color-cadlink-400: #47997d;
+  --color-cadlink-50: #1F7A62;
+  --color-cadlink-600: #18624E;
+  --color-cadlink-700: #12493b;
+  --color-cadlink-800: #0c3127;
+  --color-cadlink-900: #061814;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   margin: 0;
-  font-family: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
-  background-color: #f4f5f7;
+  font-family: var(--font-sans);
+  background-color: #f8fafc;
   color: #0f172a;
+}
+
+/* Glassmorphism utility classes */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+}
+
+.glass-card-dark {
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.mesh-bg {
+  background-color: #f8fafc;
+  background-image: 
+    radial-gradient(at 0% 0%, hsla(164,60%,92%,1) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, hsla(190,50%,92%,1) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, hsla(164,60%,92%,1) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, hsla(190,50%,92%,1) 0px, transparent 50%);
+  background-attachment: fixed;
 }

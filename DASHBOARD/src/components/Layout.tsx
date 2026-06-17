@@ -1,6 +1,7 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { Database, Users } from 'lucide-react';
+import { Database, Users, LogOut } from 'lucide-react';
+import { motion } from 'motion/react';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -9,23 +10,25 @@ export function cn(...inputs: ClassValue[]) {
 export function Layout({ 
   children, 
   currentTab = 'scrapers', 
-  setCurrentTab 
+  setCurrentTab,
+  onLogout
 }: { 
   children: React.ReactNode,
   currentTab?: 'scrapers' | 'leads',
-  setCurrentTab?: (tab: 'scrapers' | 'leads') => void
+  setCurrentTab?: (tab: 'scrapers' | 'leads') => void,
+  onLogout?: () => void
 }) {
   return (
-    <div className="min-h-screen bg-[#f4f5f7] text-slate-800 font-sans selection:bg-[#0F766E]/20">
+    <div className="min-h-screen mesh-bg text-slate-800 font-sans selection:bg-cadlink-600/20">
       {/* Top Navigation Bar */}
-      <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-6 sticky top-0 z-50 shadow-sm">
+      <header className="glass-panel border-b border-white/40 h-16 flex items-center justify-between px-6 sticky top-0 z-50 shadow-sm">
         <div className="flex items-center gap-8">
           <div className="flex items-center gap-3">
-            <div className="text-2xl font-bold tracking-tight">
+            <div className="text-2xl font-display font-extrabold tracking-tight">
               <span className="text-slate-900">CAD</span>
-              <span className="text-[#0F766E]">Link</span>
+              <span className="text-cadlink-600">Link</span>
             </div>
-            <div className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-full uppercase tracking-wider ml-1">
+            <div className="px-2 py-0.5 bg-cadlink-50 border border-cadlink-200 text-cadlink-700 text-[10px] font-bold rounded-full uppercase tracking-wider ml-1">
               ADMIN
             </div>
           </div>
@@ -35,8 +38,8 @@ export function Layout({
               <button 
                 onClick={() => setCurrentTab('scrapers')}
                 className={cn(
-                  "flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
-                  currentTab === 'scrapers' ? "bg-slate-100 text-slate-900" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                  "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all",
+                  currentTab === 'scrapers' ? "bg-white text-cadlink-700 shadow-sm border border-slate-200/50" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
                 )}
               >
                 <Database className="w-4 h-4" />
@@ -45,8 +48,8 @@ export function Layout({
               <button 
                 onClick={() => setCurrentTab('leads')}
                 className={cn(
-                  "flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
-                  currentTab === 'leads' ? "bg-slate-100 text-slate-900" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                  "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all",
+                  currentTab === 'leads' ? "bg-white text-cadlink-700 shadow-sm border border-slate-200/50" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
                 )}
               >
                 <Users className="w-4 h-4" />
@@ -57,15 +60,28 @@ export function Layout({
         </div>
 
         <div>
-          <button className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">
-            Sign Out
-          </button>
+          {onLogout && (
+            <button 
+              onClick={onLogout}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 shadow-sm transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              Sign Out
+            </button>
+          )}
         </div>
       </header>
 
       {/* Main Content */}
       <main className="p-8 max-w-[1600px] mx-auto pb-24">
-        {children}
+        <motion.div
+          key={currentTab}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          {children}
+        </motion.div>
       </main>
     </div>
   );

@@ -179,7 +179,7 @@ export function DashboardOverview() {
       <div className="space-y-8">
         
         {/* 2. MAIN CRM TABLE (Full Width) */}
-        <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+        <div className="glass-card rounded-2xl overflow-hidden">
           <div className="p-5 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-bold text-slate-800">Lead Database</h2>
@@ -324,7 +324,7 @@ export function DashboardOverview() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
           {/* 3. EMAILS TABLE */}
-          <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+          <div className="glass-card rounded-2xl overflow-hidden">
             <div className="p-5 border-b border-slate-200 flex items-center justify-between">
               <h2 className="text-lg font-bold text-slate-800">Recent Outreach</h2>
             </div>
@@ -357,7 +357,7 @@ export function DashboardOverview() {
           </div>
 
           {/* 4. SCRAPER ANALYTICS */}
-          <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6 flex flex-col">
+          <div className="glass-card rounded-2xl p-6 flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                 <BarChart3 className="w-5 h-5 text-[#0F766E]" /> Source Quality
@@ -384,7 +384,7 @@ export function DashboardOverview() {
           </div>
 
           {/* 4. SCRAPER DIAGNOSTICS (Moved to Bottom Right) */}
-          <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6 flex flex-col">
+          <div className="glass-card rounded-2xl p-6 flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                 <Bot className="w-5 h-5 text-[#0F766E]" /> Automation
@@ -454,7 +454,7 @@ export function DashboardOverview() {
 
 function StatCard({ title, value, valueColor }: { title: string, value: number, valueColor: string }) {
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm flex flex-col justify-center">
+    <div className="glass-panel rounded-xl p-6 shadow-sm flex flex-col justify-center">
       <div className="text-sm font-semibold text-slate-500 mb-1">{title}</div>
       <div className={`text-4xl font-black tracking-tight ${valueColor}`}>{value}</div>
     </div>
