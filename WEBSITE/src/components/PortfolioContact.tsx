@@ -7,19 +7,19 @@ export function PortfolioSection() {
       title: "Plant Expansion Pipeline Support", 
       tags: ["O&G", "Piping"], 
       delay: 0.1,
-      image: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&q=80&w=800" // Pipes/Industrial
+      image: "/images/portfolio_pipeline.png"
     },
     { 
       title: "Commercial Facility Steel Detailing", 
       tags: ["Structural", "Commercial"], 
       delay: 0.2,
-      image: "https://images.unsplash.com/photo-1541888088304-984dd00ed25c?auto=format&fit=crop&q=80&w=800" // Steel structures
+      image: "/images/portfolio_steel.png"
     },
     { 
       title: "Manufacturing Plant As-Builts", 
       tags: ["Civil", "Drafting"], 
       delay: 0.3,
-      image: "https://images.unsplash.com/photo-1581094794329-c8112a89af12?auto=format&fit=crop&q=80&w=800" // Engineering/Drafting
+      image: "/images/portfolio_civil.png"
     }
   ];
 
