@@ -82,10 +82,10 @@ export function ContactSection() {
           </div>
           
           <h2 className="text-4xl sm:text-5xl md:text-6xl font-display font-extrabold mb-6 tracking-tight">
-            Ready to Protect Your Margins?
+            Claim Your Free Sample Drawing
           </h2>
-          <p className="text-xl text-slate-300 mb-12 font-light max-w-2xl mx-auto">
-            Schedule a brief 15-minute capabilities overview. No hard sell, just a direct conversation about your drafting bottlenecks.
+          <p className="text-xl text-slate-300 mb-12 font-medium max-w-2xl mx-auto">
+            Test my CAD execution entirely risk-free. Send a spec, and I'll deliver the first drawing at no cost to prove the quality of my work.
           </p>
 
           <form className="glass-card-dark rounded-3xl p-8 sm:p-12 max-w-2xl mx-auto text-left relative overflow-hidden">
@@ -100,16 +100,16 @@ export function ContactSection() {
               </div>
             </div>
             <div className="mb-8">
-              <label className="block text-sm font-medium text-slate-400 mb-2">Message</label>
-              <textarea rows={4} className="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cadlink-500 focus:ring-1 focus:ring-cadlink-500 transition-colors resize-none" placeholder="We need overflow support for a piping project..."></textarea>
+              <label className="block text-sm font-medium text-slate-400 mb-2">Message (Optional)</label>
+              <textarea rows={4} className="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cadlink-500 focus:ring-1 focus:ring-cadlink-500 transition-colors resize-none" placeholder="We need some overflow support for an upcoming structural project..."></textarea>
             </div>
             
-            <button type="button" className="w-full bg-gradient-to-r from-cadlink-500 to-cadlink-600 hover:from-cadlink-400 hover:to-cadlink-500 text-white font-bold py-4 px-8 rounded-xl transition-all shadow-[0_0_20px_rgba(31,122,98,0.4)] hover:shadow-[0_0_30px_rgba(31,122,98,0.6)] flex justify-center items-center">
-              Send Message <ArrowRight className="ml-2 h-5 w-5" />
+            <button type="button" className="w-full bg-cadlink-600 hover:bg-cadlink-500 text-white font-bold py-4 px-8 rounded-xl transition-all shadow-[0_0_20px_rgba(31,122,98,0.4)] hover:shadow-[0_0_30px_rgba(31,122,98,0.6)] flex justify-center items-center text-lg">
+              Request Free Sample Drawing <ArrowRight className="ml-2 h-5 w-5" />
             </button>
             
             <div className="mt-6 flex items-center justify-center text-sm text-slate-400 font-medium">
-              <CheckCircle2 className="h-4 w-4 text-cadlink-500 mr-2" /> Usually responds within 4 hours.
+              <CheckCircle2 className="h-4 w-4 text-cadlink-500 mr-2" /> Usually responds within 2-4 hours.
             </div>
           </form>
         </motion.div>

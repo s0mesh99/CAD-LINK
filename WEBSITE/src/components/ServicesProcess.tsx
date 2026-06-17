@@ -1,36 +1,36 @@
 import { motion } from 'motion/react';
-import { Compass, PenTool, LayoutTemplate, Briefcase, ChevronRight } from 'lucide-react';
+import { Compass, PenTool, LayoutTemplate, ShieldCheck } from 'lucide-react';
 
 export function ServicesSection() {
   const services = [
     {
       title: "Civil Layouts & Drafting",
-      desc: "Translating concepts into accurate, actionable site plans and layouts.",
+      desc: "Translating engineering concepts into accurate, actionable site plans and layouts.",
       features: ["Site Layout Development", "Grading & Drainage", "Paving Plans"],
       icon: Compass,
       className: "md:col-span-2 lg:col-span-1"
     },
     {
       title: "Structural Modeling",
-      desc: "Rigorous execution of structural arrangements adhering to strict drafting standards.",
+      desc: "Rigorous execution of structural arrangements adhering to strict drafting standards like ADNOC and Aramco.",
       features: ["3D Steel & Concrete Modeling", "Fabrication Detailing", "Piperack & Equipment Foundations"],
       icon: LayoutTemplate,
-      className: "md:col-span-2 lg:col-span-2 bg-gradient-to-br from-slate-900 to-slate-800 text-white border-0",
+      className: "md:col-span-2 lg:col-span-2 bg-gradient-to-br from-slate-900 to-slate-800 text-white border-0 shadow-2xl",
       isDark: true
     },
     {
       title: "Advanced CAD Detailing",
-      desc: "High-fidelity 2D/3D visual assets and thorough engineering documentation.",
-      features: ["As-Built Updates", "Drawing Coordination", "BOM Extraction"],
+      desc: "High-fidelity 2D/3D visual assets delivered in your required software.",
+      features: ["AutoCAD (DWG)", "MicroStation (DGN)", "BOM Extraction & As-Builts"],
       icon: PenTool,
       className: "md:col-span-2 lg:col-span-2"
     },
     {
-      title: "B2B Marketing for Engineering",
-      desc: "Targeted digital growth solutions specific to engineering consultancies.",
-      features: ["Technical SEO", "LinkedIn Lead Gen", "Proposal Assets"],
-      icon: Briefcase,
-      className: "md:col-span-2 lg:col-span-1 bg-cadlink-50 border-cadlink-200"
+      title: "The Zero-Risk Guarantee",
+      desc: "I will draft your first drawing completely free of charge. You only pay if you are satisfied with the quality.",
+      features: ["First Drawing Free", "No Retainer Required", "24-48hr Turnaround"],
+      icon: ShieldCheck,
+      className: "md:col-span-2 lg:col-span-1 bg-cadlink-50 border-cadlink-200 border-2"
     }
   ];
 
@@ -54,15 +54,15 @@ export function ServicesSection() {
               whileHover={{ y: -5 }}
               className={`p-10 rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 ${svc.className || ''} flex flex-col`}
             >
-              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-8 ${svc.isDark ? 'bg-white/10 text-white' : 'bg-cadlink-50 text-cadlink-600'}`}>
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-8 ${svc.isDark ? 'bg-white/10 text-white' : 'bg-cadlink-100 text-cadlink-700'}`}>
                 <svc.icon className="h-7 w-7" />
               </div>
               <h4 className={`text-2xl font-bold mb-4 font-display ${svc.isDark ? 'text-white' : 'text-slate-900'}`}>{svc.title}</h4>
-              <p className={`mb-8 font-light flex-grow leading-relaxed ${svc.isDark ? 'text-slate-300' : 'text-slate-600'}`}>{svc.desc}</p>
+              <p className={`mb-8 font-medium flex-grow leading-relaxed ${svc.isDark ? 'text-slate-300' : 'text-slate-600'}`}>{svc.desc}</p>
               <ul className="space-y-3">
                 {svc.features.map((feature, fidx) => (
-                  <li key={fidx} className={`flex items-center text-sm font-medium ${svc.isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                    <CheckCircleSmall className={`mr-3 h-4 w-4 ${svc.isDark ? 'text-cadlink-400' : 'text-cadlink-500'}`} />
+                  <li key={fidx} className={`flex items-center text-sm font-bold ${svc.isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                    <CheckCircleSmall className={`mr-3 h-4 w-4 ${svc.isDark ? 'text-cadlink-400' : 'text-cadlink-600'}`} />
                     {feature}
                   </li>
                 ))}
@@ -85,10 +85,10 @@ function CheckCircleSmall({ className }: { className?: string }) {
 
 export function ProcessSection() {
   const steps = [
-    { title: "Requirement Discussion", desc: "Clarifying exact scope, inputs, and standards." },
-    { title: "Project Assessment", desc: "Analyzing complexity and confirming alignment." },
-    { title: "Execution", desc: "Rigorous, focused drafting and CAD modeling." },
-    { title: "Delivery", desc: "Handover of precise, ready-to-use support assets." }
+    { title: "Send Your Spec", desc: "Share your drawing standards, seed files, and the scope of the drawing you need." },
+    { title: "Free Trial Draft", desc: "I will complete the first drawing completely free of charge to prove my quality." },
+    { title: "Review & Refine", desc: "You review the work. If it meets your standards, we move forward." },
+    { title: "Ongoing Support", desc: "Hire me per-drawing, per-week, or on a monthly retainer as needed." }
   ];
 
   return (
@@ -122,7 +122,7 @@ export function ProcessSection() {
                 0{idx + 1}
               </div>
               <h4 className="font-bold text-xl text-slate-900 mb-3">{step.title}</h4>
-              <p className="text-sm text-slate-600 leading-relaxed font-light">{step.desc}</p>
+              <p className="text-sm text-slate-600 leading-relaxed font-medium">{step.desc}</p>
             </motion.div>
           ))}
         </div>
