@@ -3,9 +3,24 @@ import { Mail, ArrowRight, CheckCircle2 } from 'lucide-react';
 
 export function PortfolioSection() {
   const projects = [
-    { title: "Plant Expansion Pipeline Support", tags: ["O&G", "Piping"], delay: 0.1 },
-    { title: "Commercial Facility Steel Detailing", tags: ["Structural", "Commercial"], delay: 0.2 },
-    { title: "Manufacturing Plant As-Builts", tags: ["Civil", "Drafting"], delay: 0.3 }
+    { 
+      title: "Plant Expansion Pipeline Support", 
+      tags: ["O&G", "Piping"], 
+      delay: 0.1,
+      image: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&q=80&w=800" // Pipes/Industrial
+    },
+    { 
+      title: "Commercial Facility Steel Detailing", 
+      tags: ["Structural", "Commercial"], 
+      delay: 0.2,
+      image: "https://images.unsplash.com/photo-1541888088304-984dd00ed25c?auto=format&fit=crop&q=80&w=800" // Steel structures
+    },
+    { 
+      title: "Manufacturing Plant As-Builts", 
+      tags: ["Civil", "Drafting"], 
+      delay: 0.3,
+      image: "https://images.unsplash.com/photo-1581094794329-c8112a89af12?auto=format&fit=crop&q=80&w=800" // Engineering/Drafting
+    }
   ];
 
   return (
@@ -53,10 +68,16 @@ export function PortfolioSection() {
               whileHover={{ y: -15, scale: 1.02 }}
               className="group relative overflow-hidden rounded-3xl bg-slate-900 aspect-square flex flex-col justify-end p-8 shadow-xl cursor-pointer"
             >
-              {/* Abstract Blueprint Background Overlay */}
-              <div className="absolute inset-0 opacity-20 group-hover:opacity-50 transition-opacity duration-700" 
+              {/* Background Image */}
+              <div 
+                className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110 opacity-50"
+                style={{ backgroundImage: `url(${proj.image})` }}
+              ></div>
+
+              {/* Abstract Blueprint Background Overlay (subtle) */}
+              <div className="absolute inset-0 opacity-10 group-hover:opacity-30 transition-opacity duration-700 mix-blend-overlay" 
                    style={{
-                     backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
+                     backgroundImage: 'linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)',
                      backgroundSize: '20px 20px'
                    }}>
               </div>
@@ -64,15 +85,15 @@ export function PortfolioSection() {
               <div className="relative z-10 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500 ease-out">
                 <div className="flex gap-2 mb-4">
                   {proj.tags.map(tag => (
-                    <span key={tag} className="text-xs font-bold px-3 py-1 bg-cadlink-500/80 backdrop-blur-md text-white rounded-full border border-cadlink-400/50">
+                    <span key={tag} className="text-xs font-bold px-3 py-1 bg-cadlink-500/90 backdrop-blur-md text-white rounded-full border border-cadlink-400/50">
                       {tag}
                     </span>
                   ))}
                 </div>
-                <h4 className="text-2xl font-bold text-white leading-tight font-display">{proj.title}</h4>
+                <h4 className="text-2xl font-bold text-white leading-tight font-display drop-shadow-md">{proj.title}</h4>
               </div>
               
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent group-hover:from-cadlink-900/90 transition-colors duration-500"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/95 via-slate-900/50 to-transparent group-hover:from-cadlink-900/95 transition-colors duration-500"></div>
             </motion.div>
           ))}
         </div>
