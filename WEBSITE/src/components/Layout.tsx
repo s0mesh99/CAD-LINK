@@ -36,7 +36,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex space-x-8 items-center">
-              {['Services', 'Workflow', 'Portfolio'].map((item) => (
+              {['Services', 'Process', 'Portfolio'].map((item) => (
                 <a 
                   key={item} 
                   href={`#${item.toLowerCase()}`} 
@@ -75,7 +75,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               className="md:hidden glass-card border-t border-white/40 mt-3"
             >
               <div className="px-4 pt-2 pb-6 space-y-2">
-                {['Services', 'Workflow', 'Portfolio'].map((item) => (
+                {['Services', 'Process', 'Portfolio'].map((item) => (
                   <a 
                     key={item} 
                     href={`#${item.toLowerCase()}`} 

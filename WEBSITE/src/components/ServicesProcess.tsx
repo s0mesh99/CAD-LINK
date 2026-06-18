@@ -5,30 +5,30 @@ export function ServicesSection() {
   const services = [
     {
       title: "Civil Layouts & Drafting",
-      desc: "Translating engineering concepts into accurate, actionable site plans and layouts.",
-      features: ["Site Layout Development", "Grading & Drainage", "Paving Plans"],
+      desc: "Accurate, construction-ready civil drawings — from general arrangement through final detailing — built to your project's exact standards.",
+      features: ["Site Layout Development", "Grading & Drainage Plans", "Roads & Paving Plans", "Underground (UG) Utility Layouts", "Civil General Arrangement (GA) Drawings", "Foundation Layouts", "Substation Civil Layouts", "Trench & Duct Routing"],
       icon: Compass,
       className: "md:col-span-2 lg:col-span-1"
     },
     {
-      title: "Structural Modeling",
-      desc: "Rigorous execution of structural arrangements adhering to strict drafting standards like ADNOC and Aramco.",
-      features: ["3D Steel & Concrete Modeling", "Fabrication Detailing", "Piperack & Equipment Foundations"],
+      title: "Structural Modeling & Detailing",
+      desc: "Precise 3D structural modeling and fabrication-ready detailing, drafted to the standards used on ADNOC, Aramco, and other Tier-1 O&G EPC projects.",
+      features: ["3D Steel & Concrete Modeling", "Fabrication & Erection Detailing", "Piperacks & Trestles", "Equipment Foundations", "Tank Foundations", "Access & Maintenance Platforms", "Structural Shelters"],
       icon: LayoutTemplate,
       className: "md:col-span-2 lg:col-span-2 bg-gradient-to-br from-slate-900 to-slate-800 text-white border-0 shadow-2xl",
       isDark: true
     },
     {
       title: "Advanced CAD Detailing",
-      desc: "High-fidelity 2D/3D visual assets delivered in your required software.",
-      features: ["AutoCAD (DWG)", "MicroStation (DGN)", "BOM Extraction & As-Builts"],
+      desc: "Drawings and models delivered in the exact software and file format your project requires, shared through cloud platforms for fast remote review and markup.",
+      features: ["AutoCAD (DWG)", "MicroStation (DGN)", "Tekla Structures", "SmartPlant 3D (S3D) & AVEVA E3D", "BOM Extraction & As-Built Documentation"],
       icon: PenTool,
       className: "md:col-span-2 lg:col-span-2"
     },
     {
       title: "The Zero-Risk Guarantee",
-      desc: "I will draft your first drawing completely free of charge. You only pay if you are satisfied with the quality.",
-      features: ["First Drawing Free", "No Retainer Required", "24-48hr Turnaround"],
+      desc: "Your first drawing is completed at no cost, against an agreed scope. If it doesn't meet your standard, you owe nothing — no retainer, no contract, no risk.",
+      features: ["First Drawing Free", "No Retainer or Long-Term Contract", "24–48 Hour Turnaround"],
       icon: ShieldCheck,
       className: "md:col-span-2 lg:col-span-1 bg-cadlink-50 border-cadlink-200 border-2"
     }
@@ -67,7 +67,7 @@ export function ServicesSection() {
           className="text-center mb-20"
         >
           <h2 className="text-sm font-bold text-cadlink-600 tracking-widest uppercase mb-3">Core Capabilities</h2>
-          <h3 className="text-4xl font-display font-extrabold text-slate-900 tracking-tight sm:text-5xl">Plug-and-Play Design Support</h3>
+          <h3 className="text-4xl font-display font-extrabold text-slate-900 tracking-tight sm:text-5xl">Civil & Structural Drafting Support, Ready to Deploy</h3>
           <motion.div 
             initial={{ width: 0 }}
             whileInView={{ width: 80 }}
@@ -133,14 +133,14 @@ function CheckCircleSmall({ className }: { className?: string }) {
 
 export function ProcessSection() {
   const steps = [
-    { title: "Send Your Spec", desc: "Share your drawing standards, seed files, and the scope of the drawing you need." },
-    { title: "Free Trial Draft", desc: "I will complete the first drawing completely free of charge to prove my quality." },
-    { title: "Review & Refine", desc: "You review the work. If it meets your standards, we move forward." },
-    { title: "Ongoing Support", desc: "Hire me per-drawing, per-week, or on a monthly retainer as needed." }
+    { title: "Send Your Spec", desc: "Share your drawing standards, reference files, and the scope you need covered." },
+    { title: "Free Trial Draft", desc: "I deliver your first drawing at no cost, matching your exact standards and file format." },
+    { title: "Review & Refine", desc: "You review the output against your standards. We refine until it's right, then move forward." },
+    { title: "Ongoing Support", desc: "Scale up with per-drawing, weekly, or monthly retainer arrangements — whatever fits your project timeline." }
   ];
 
   return (
-    <section id="workflow" className="py-24 mesh-bg border-y border-slate-200 overflow-hidden relative">
+    <section id="process" className="py-24 mesh-bg border-y border-slate-200 overflow-hidden relative">
       {/* Decorative Blob */}
       <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-cadlink-200/30 rounded-full blur-[120px] pointer-events-none translate-y-1/2 -translate-x-1/2"></div>
 

@@ -6,19 +6,19 @@ import { supabase } from '../lib/supabase';
 export function PortfolioSection() {
   const projects = [
     { 
-      title: "Plant Expansion Pipeline Support", 
+      title: "Plant Expansion: Pipeline & Piperack Support", 
       tags: ["O&G", "Piping"], 
       delay: 0.1,
       image: "/images/portfolio_pipeline.png"
     },
     { 
-      title: "Commercial Facility Steel Detailing", 
+      title: "Commercial Facility: Structural Steel Detailing", 
       tags: ["Structural", "Commercial"], 
       delay: 0.2,
       image: "/images/portfolio_steel.png"
     },
     { 
-      title: "Manufacturing Plant As-Builts", 
+      title: "Manufacturing Plant: As-Built Civil Drawings", 
       tags: ["Civil", "Drafting"], 
       delay: 0.3,
       image: "/images/portfolio_civil.png"
@@ -164,7 +164,7 @@ export function ContactSection() {
             Claim Your Free Sample Drawing
           </h2>
           <p className="text-xl text-slate-300 mb-12 font-medium max-w-2xl mx-auto leading-relaxed">
-            Test my CAD execution entirely risk-free. Send a spec, and I'll deliver the first drawing at no cost to prove the quality of my work.
+            See my execution quality before you commit. Share your spec, and I'll deliver your first drawing at no cost — no retainer, no obligation.
           </p>
 
           <form onSubmit={handleSubmit} className="glass-card-dark rounded-3xl p-8 sm:p-12 max-w-2xl mx-auto text-left relative overflow-hidden border border-slate-700/50 shadow-2xl">
@@ -198,7 +198,7 @@ export function ContactSection() {
                       value={formData.name}
                       onChange={e => setFormData({...formData, name: e.target.value})}
                       className="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cadlink-500 focus:ring-1 focus:ring-cadlink-500 transition-colors shadow-inner" 
-                      placeholder="John Doe" 
+                      placeholder="Full Name" 
                     />
                   </motion.div>
                   <motion.div whileFocus={{ scale: 1.02 }} className="transition-transform">
@@ -209,7 +209,7 @@ export function ContactSection() {
                       value={formData.email}
                       onChange={e => setFormData({...formData, email: e.target.value})}
                       className="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cadlink-500 focus:ring-1 focus:ring-cadlink-500 transition-colors shadow-inner" 
-                      placeholder="john@epcfirm.com" 
+                      placeholder="you@yourcompany.com" 
                     />
                   </motion.div>
                 </div>
@@ -220,7 +220,7 @@ export function ContactSection() {
                     value={formData.message}
                     onChange={e => setFormData({...formData, message: e.target.value})}
                     className="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cadlink-500 focus:ring-1 focus:ring-cadlink-500 transition-colors resize-none shadow-inner" 
-                    placeholder="We need some overflow support for an upcoming structural project..."
+                    placeholder="E.g., We need overflow piping or structural drafting support for an upcoming project."
                   ></textarea>
                 </motion.div>
                 
@@ -245,7 +245,7 @@ export function ContactSection() {
                 </motion.button>
                 
                 <div className="mt-6 flex items-center justify-center text-sm text-slate-400 font-medium">
-                  <CheckCircle2 className="h-4 w-4 text-cadlink-500 mr-2" /> Usually responds within 2-4 hours.
+                  <CheckCircle2 className="h-4 w-4 text-cadlink-500 mr-2" /> Typically responds within 2–4 hours.
                 </div>
               </>
             )}

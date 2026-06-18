@@ -28,7 +28,7 @@ export function HeroSection() {
           transition={{ duration: 0.8, type: "spring", bounce: 0.4 }}
           className="inline-flex items-center justify-center px-4 py-1.5 mb-8 text-xs font-bold tracking-widest text-cadlink-700 uppercase bg-cadlink-100/50 rounded-full border border-cadlink-300/50 backdrop-blur-md"
         >
-          Specialized Freelance Studio
+          Independent EPC Drafting Studio
         </motion.div>
 
         <motion.h1 
@@ -37,9 +37,9 @@ export function HeroSection() {
           transition={{ duration: 0.8, delay: 0.1, type: "spring", bounce: 0.4 }}
           className="text-5xl tracking-tight font-display font-extrabold sm:text-6xl md:text-7xl max-w-5xl mx-auto leading-[1.1]"
         >
-          Scale Engineering Capacity <br />
+          Civil & Structural Design Support for EPC Projects. <br />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-cadlink-500 to-cadlink-700 inline-block relative">
-            Without Agency Overhead.
+            Without the Agency Overhead.
             <motion.div 
               initial={{ width: 0 }}
               animate={{ width: "100%" }}
@@ -55,7 +55,7 @@ export function HeroSection() {
           transition={{ duration: 0.8, delay: 0.2, type: "spring" }}
           className="mt-8 max-w-2xl mx-auto text-lg text-slate-600 sm:text-xl font-medium leading-relaxed"
         >
-          I provide elite, on-demand 3D modeling and engineering drafting support specifically engineered to protect margins for EPC and O&G contractors.
+          Accurate civil and structural drafting, detailing, and 3D modeling services for oil & gas, industrial, and infrastructure projects. Backed by 5+ years of EPC design experience using AutoCAD, MicroStation, Tekla, SmartPlant 3D (S3D), and AVEVA E3D—delivering scalable engineering support without agency overheads or long-term commitments.
         </motion.p>
         
         <motion.div 
@@ -90,9 +90,9 @@ export function HeroSection() {
 
 export function AboutSection() {
   const highlights = [
-    { title: "Rapid Resource Scaling", desc: "Instantly add expert drafting capacity without fixed overhead.", icon: TrendingUp },
-    { title: "Flawless Execution", desc: "AutoCAD & MicroStation drafting compliant with global industrial standards.", icon: Shield },
-    { title: "Zero Agency Bloat", desc: "No middlemen. Direct communication ensures instant clarity.", icon: Users }
+    { title: "Rapid Resource Scaling", desc: "Add senior drafting capacity within days, not weeks. No recruitment cycles, no fixed headcount, no idle bench cost.", icon: TrendingUp },
+    { title: "Standards-Compliant Execution", desc: "Drawings benchmarked against the QA standards used on international EPC and O&G projects — not generic templates.", icon: Shield },
+    { title: "Zero Agency Bloat", desc: "Work directly with the person doing the drafting. Clear communication, fast turnarounds, and seamless remote collaboration across time zones — no agency layer slowing things down.", icon: Users }
   ];
 
   return (
@@ -127,7 +127,7 @@ export function AboutSection() {
             >
               <div className="text-sm font-bold text-cadlink-600 uppercase tracking-wider mb-1">Margin Protection</div>
               <div className="text-3xl font-display font-extrabold text-slate-900">Up to 35%</div>
-              <div className="text-sm text-slate-600 mt-1">Reduction in drafting overhead costs.</div>
+              <div className="text-sm text-slate-600 mt-1">Typical reduction in drafting overhead vs. traditional agency rates.</div>
             </motion.div>
           </motion.div>
           
@@ -149,7 +149,7 @@ export function AboutSection() {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="text-4xl font-display font-extrabold text-slate-900 mb-6 lg:text-5xl tracking-tight leading-tight"
             >
-              Protect Margins During Peak Tender Phases.
+              Protect Your Margins During Tender Rushes and Execution Overload.
             </motion.h3>
             
             <motion.p 
@@ -159,7 +159,7 @@ export function AboutSection() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="text-lg text-slate-600 mb-10 leading-relaxed font-medium"
             >
-              Say goodbye to bloated agency overhead and drafting bottlenecks. I provide direct, expert-level 2D drafting and layout modeling tailored for the high standards of global EPCs. I act as a seamless extension to your internal teams.
+              Internal drafting teams get stretched thin during tender submissions and execution crunches — and agency overhead only slows things down further. CAD LINK gives you direct access to senior-level civil and structural drafting and 3D modeling, using the same tools your team already runs on: AutoCAD, MicroStation, and Tekla. I plug into your workflow as a working extension of your team, not another vendor layer to manage.
             </motion.p>
             
             <ul className="space-y-8">
