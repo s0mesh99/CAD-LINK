@@ -1,6 +1,6 @@
 import time
 import re
-from scrapers.base import BaseScraper
+from scrapers.base_scraper import BaseScraper
 
 class WikipediaTargetedScraper(BaseScraper):
     def __init__(self):

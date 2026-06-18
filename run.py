@@ -8,6 +8,7 @@ from scrapers.bing_search import BingSearchScraper
 from scrapers.github_lists import GithubListsScraper
 from scrapers.github_api import GithubApiScraper
 from scrapers.domain_cluster import DomainClusterScraper
+from scrapers.wikipedia_targeted import WikipediaTargetedScraper
 from db.client import DatabaseClient
 
 def run_scrapers():
@@ -16,6 +17,7 @@ def run_scrapers():
     # Priority order based on expected yield and API limits
     scrapers = [
         GithubApiScraper(),
+        WikipediaTargetedScraper(),
         DuckDuckGoScraper(),
         PDFMinerScraper(),
         IndustryRSSScraper(),

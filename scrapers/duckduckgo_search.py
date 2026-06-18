@@ -24,15 +24,14 @@ DDG_URL = "https://html.duckduckgo.com/html/"
 # ── Query bank ──────────────────────────────────────────────────────────────
 
 REGIONS = [
-    '"UAE"', '"Abu Dhabi"', '"Dubai"', '"Sharjah"', '"Qatar"', '"Oman"', '"Kuwait"', '"Saudi Arabia"', 
-    '"Bahrain"', '"Egypt"', '"Nigeria"', '"South Africa"',
-    '"India"', '"Mumbai"', '"Chennai"', '"Hyderabad"', '"Pune"', '"Bengaluru"', '"Gujarat"',
-    '"Australia"', '"Perth"', '"Brisbane"', '"Melbourne"', '"Sydney"',
-    '"Canada"', '"Calgary"', '"Alberta"', '"Edmonton"', '"Vancouver"',
-    '"UK"', '"Aberdeen"', '"London"', '"Scotland"', '"North Sea"',
-    '"USA"', '"Texas"', '"Houston"', '"Louisiana"', '"Denver"', '"California"',
-    '"Singapore"', '"Malaysia"', '"Kuala Lumpur"', '"Indonesia"', '"Jakarta"',
-    '"Brazil"', '"Rio de Janeiro"', '"Mexico"'
+    # North America
+    '"Houston"', '"Calgary"', '"Denver"', '"Louisiana"', '"New York"', '"Toronto"',
+    # Middle East & Africa
+    '"Dubai"', '"Abu Dhabi"', '"Dhahran"', '"Doha"', '"Johannesburg"',
+    # Europe
+    '"Aberdeen"', '"London"', '"Stavanger"', '"Rotterdam"',
+    # APAC
+    '"Singapore"', '"Perth"', '"Kuala Lumpur"', '"Mumbai"', '"Tokyo"'
 ]
 
 SERVICES = [
