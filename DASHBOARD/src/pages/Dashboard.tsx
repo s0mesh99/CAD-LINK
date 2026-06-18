@@ -2,9 +2,10 @@ import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '../supabaseClient';
 import { 
   Mail, Bot, Play, CheckCircle2, XCircle, 
-  Search, Trash2, Edit2, Send, Download, ExternalLink, X, BarChart3
+  Search, Trash2, Edit2, Send, Download, ExternalLink, X, BarChart3, KanbanSquare, LayoutList
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { CRMBoard } from '../components/CRMBoard';
 
 export function DashboardOverview() {
   const [stats, setStats] = useState({ totalLeads: 0, premiumLeads: 0, totalEmails: 0, bouncedEmails: 0 });
@@ -12,6 +13,7 @@ export function DashboardOverview() {
   const [leads, setLeads] = useState<any[]>([]);
   const [emails, setEmails] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<'table' | 'board'>('table');
 
   // Scraper Trigger State
   const [triggering, setTriggering] = useState(false);
@@ -178,12 +180,29 @@ export function DashboardOverview() {
 
       <div className="space-y-8">
         
-        {/* 2. MAIN CRM TABLE (Full Width) */}
+        {/* 2. MAIN CRM TABLE OR BOARD (Full Width) */}
         <div className="glass-card rounded-2xl overflow-hidden">
           <div className="p-5 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold text-slate-800">Lead Database</h2>
-              <span className="text-xs font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{filteredLeads.length}</span>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold text-slate-800">Lead Database</h2>
+                <span className="text-xs font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{filteredLeads.length}</span>
+              </div>
+              
+              <div className="flex bg-slate-100 rounded-lg p-1">
+                <button 
+                  onClick={() => setViewMode('table')}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === 'table' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  <LayoutList className="w-4 h-4" /> Table
+                </button>
+                <button 
+                  onClick={() => setViewMode('board')}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === 'board' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  <KanbanSquare className="w-4 h-4" /> CRM Board
+                </button>
+              </div>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <div className="relative">
@@ -213,7 +232,7 @@ export function DashboardOverview() {
               <button onClick={handleExportCSV} className="border border-slate-300 hover:bg-slate-50 text-slate-700 px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2 transition-colors">
                 <Download className="w-4 h-4" /> Export
               </button>
-              {selectedIds.size > 0 && (
+              {selectedIds.size > 0 && viewMode === 'table' && (
                 <button onClick={handleBulkDeleteLeads} className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2 transition-colors">
                   <Trash2 className="w-4 h-4" /> Delete ({selectedIds.size})
                 </button>
@@ -221,6 +240,11 @@ export function DashboardOverview() {
             </div>
           </div>
 
+          {viewMode === 'board' ? (
+            <div className="p-5">
+              <CRMBoard leads={filteredLeads} setLeads={setLeads} />
+            </div>
+          ) : (
           <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
             <table className="w-full text-left text-sm whitespace-nowrap">
               <thead className="bg-slate-50 border-b border-slate-200 sticky top-0 z-10">
@@ -318,6 +342,7 @@ export function DashboardOverview() {
               </tbody>
             </table>
           </div>
+          )}
         </div>
         
         {/* Split Grid for Bottom Section: Outreach & Diagnostics */}
