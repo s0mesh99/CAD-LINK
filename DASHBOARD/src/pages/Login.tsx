@@ -13,7 +13,7 @@ export function LoginScreen({ onLogin }: LoginProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Use env variable or fallback
-    const correctPassword = import.meta.env.VITE_ADMIN_PASSWORD || 'CadlinkAdmin2026!';
+    const correctPassword = import.meta.env.VITE_ADMIN_PASSWORD || 'CadlinkAdmin1005';
     
     if (password === correctPassword) {
       setError(false);
