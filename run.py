@@ -82,9 +82,10 @@ def pre_send_safety_check(db, phase: int) -> bool:
     return True
 
 def enrich_leads(limit=100):
-    print(f"=== STARTING V1.3 ENRICHMENT PIPELINE ===")
+    print(f"=== STARTING DUAL-ENGINE ENRICHMENT PIPELINE ===")
     from db.client import DatabaseClient
     from scrapers.company_website import extract_from_website
+    from scrapers.dork_enrichment import DorkEnrichmentScraper
     
     db = DatabaseClient()
     if not db.supabase:
@@ -101,12 +102,23 @@ def enrich_leads(limit=100):
 
     print(f"Found {len(leads_to_enrich)} leads missing emails. Enriching...")
     
+    dorker = DorkEnrichmentScraper()
     enriched_count = 0
+    dork_success = 0
+    playwright_success = 0
+    
     for idx, lead in enumerate(leads_to_enrich, 1):
         domain = lead.get('domain')
-        print(f"[{idx}/{len(leads_to_enrich)}] Enriching {domain}...")
+        print(f"\n[{idx}/{len(leads_to_enrich)}] Enriching {domain}...")
         try:
-            extracted = extract_from_website(domain)
+            # TIER 1: Dorking
+            print("   -> Running Tier 1 (DuckDuckGo Dorking)...")
+            extracted = dorker.find_email(domain)
+            
+            # TIER 2: Playwright (if Dorking fails)
+            if not extracted.get('email_1'):
+                print(f"   -> Tier 1 failed. Running Tier 2 (Playwright Headless Chrome)...")
+                extracted = extract_from_website(domain)
             
             if extracted.get('email_1') or extracted.get('phone'):
                 lead['email_1'] = extracted.get('email_1')
@@ -117,13 +129,21 @@ def enrich_leads(limit=100):
                 
                 db.upsert_company(lead)
                 enriched_count += 1
-                print(f"   -> Found! Email: {lead['email_1']} | Phone: {lead['phone']}")
+                method = extracted.get('method', 'unknown')
+                if method == 'dorking': dork_success += 1
+                elif method == 'playwright': playwright_success += 1
+                
+                print(f"   -> [SUCCESS] Found via {method}! Email: {lead['email_1']} | Phone: {lead['phone']}")
             else:
-                print("   -> No contact info found.")
+                print("   -> [FAILED] No contact info found via either method.")
         except Exception as e:
             print(f"   -> Error enriching {domain}: {e}")
             
-    print(f"=== ENRICHMENT COMPLETE. Successfully enriched {enriched_count} leads. ===")
+    print(f"\n=== ENRICHMENT COMPLETE ===")
+    print(f"Total Leads Processed: {len(leads_to_enrich)}")
+    print(f"Total Enriched: {enriched_count}")
+    print(f"Tier 1 (Dorking) Wins: {dork_success}")
+    print(f"Tier 2 (Playwright) Wins: {playwright_success}")
 
 def show_stats():
     from db.client import DatabaseClient

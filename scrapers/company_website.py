@@ -1,25 +1,16 @@
-import requests
 import re
 from urllib.parse import urljoin
-import urllib3
-from bs4 import BeautifulSoup
-from utils.rate_limiter import RateLimiter
-from utils.proxy_rotator import get_random_user_agent
-
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+from playwright.sync_api import sync_playwright
 
 PAGES_TO_CHECK = [
-    '', '/contact', '/contact-us', '/contacts', '/about', '/about-us',
-    '/team', '/our-team', '/people', '/leadership', '/management',
-    '/engineering', '/services', '/reach-us', '/get-in-touch',
+    '', '/contact', '/contact-us', '/about', '/about-us'
 ]
 
 def extract_from_website(domain: str) -> dict:
     """
-    Intelligently extracts emails, phone numbers, and potential contacts from a company's website.
-    Visits typical contact pages and extracts info using regex.
+    Intelligently extracts emails, phone numbers using Playwright headless browser
+    to bypass Cloudflare and execute JavaScript.
     """
-    rate_limiter = RateLimiter(1, 3)
     if not domain.startswith('http'):
         base_url = f"https://{domain}"
     else:
@@ -30,26 +21,48 @@ def extract_from_website(domain: str) -> dict:
         'email_2': None,
         'phone': None,
         'contact_name': None,
-        'contact_title': None
+        'contact_title': None,
+        'method': 'playwright'
     }
     
     emails_found = set()
     phones_found = set()
     
-    for path in PAGES_TO_CHECK:
-        url = urljoin(base_url, path)
-        try:
-            rate_limiter.wait()
-            headers = {'User-Agent': get_random_user_agent()}
-            resp = requests.get(url, headers=headers, timeout=8, verify=False)
-            if resp.status_code == 200:
-                html = resp.text
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context(
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            ignore_https_errors=True
+        )
+        page = context.new_page()
+        page.set_default_timeout(10000) # 10s timeout per page
+        
+        for path in PAGES_TO_CHECK:
+            url = urljoin(base_url, path)
+            try:
+                page.goto(url, wait_until="domcontentloaded")
+                # Wait briefly for any JS rendering or Cloudflare redirects
+                page.wait_for_timeout(2000)
+                html = page.content()
                 
-                # Regex for emails
+                # Regex for emails in raw HTML
                 emails = re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', html)
                 for email in emails:
-                    if not email.endswith(('.png', '.jpg', '.jpeg', '.gif', '.css', '.js')):
-                        emails_found.add(email.lower())
+                    email = email.lower()
+                    if not email.endswith(('.png', '.jpg', '.jpeg', '.gif', '.css', '.js', '.webp')):
+                        emails_found.add(email)
+                
+                # Extract specifically from mailto: links which might be hydrated by JS
+                try:
+                    mailto_links = page.locator("a[href^='mailto:']").all()
+                    for link in mailto_links:
+                        href = link.get_attribute("href")
+                        if href:
+                            email = href.replace('mailto:', '').split('?')[0].strip().lower()
+                            if '@' in email:
+                                emails_found.add(email)
+                except:
+                    pass
                 
                 # Basic regex for international phones
                 phones = re.findall(r'\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}', html)
@@ -57,14 +70,17 @@ def extract_from_website(domain: str) -> dict:
                     if len(re.sub(r'\D', '', phone)) >= 8:
                         phones_found.add(phone.strip())
                 
-                # Stop checking pages if we found enough info
                 if len(emails_found) >= 2:
                     break
-        except:
-            continue
+            except Exception as e:
+                # Could be a timeout or a bad path
+                continue
+                
+        browser.close()
             
     if emails_found:
         emails_list = list(emails_found)
+        emails_list.sort(key=lambda e: 0 if any(x in e for x in ['info@', 'contact@', 'sales@', 'hello@', 'admin@']) else 1)
         extracted_data['email_1'] = emails_list[0]
         if len(emails_list) > 1:
             extracted_data['email_2'] = emails_list[1]
