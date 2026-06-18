@@ -81,6 +81,50 @@ def pre_send_safety_check(db, phase: int) -> bool:
     print("[OK] Pre-send safety check passed. Proceeding...\n")
     return True
 
+def enrich_leads(limit=100):
+    print(f"=== STARTING V1.3 ENRICHMENT PIPELINE ===")
+    from db.client import DatabaseClient
+    from scrapers.company_website import extract_from_website
+    
+    db = DatabaseClient()
+    if not db.supabase:
+        print("No Supabase client.")
+        return
+
+    # Query leads with no email
+    try:
+        res = db.supabase.table('companies').select('*').is_('email_1', 'null').is_('contact_email', 'null').not_.is_('domain', 'null').limit(limit).execute()
+        leads_to_enrich = res.data
+    except Exception as e:
+        print(f"Error fetching leads to enrich: {e}")
+        return
+
+    print(f"Found {len(leads_to_enrich)} leads missing emails. Enriching...")
+    
+    enriched_count = 0
+    for idx, lead in enumerate(leads_to_enrich, 1):
+        domain = lead.get('domain')
+        print(f"[{idx}/{len(leads_to_enrich)}] Enriching {domain}...")
+        try:
+            extracted = extract_from_website(domain)
+            
+            if extracted.get('email_1') or extracted.get('phone'):
+                lead['email_1'] = extracted.get('email_1')
+                lead['email_2'] = extracted.get('email_2')
+                lead['phone'] = extracted.get('phone')
+                lead['contact_name'] = extracted.get('contact_name')
+                lead['contact_title'] = extracted.get('contact_title')
+                
+                db.upsert_company(lead)
+                enriched_count += 1
+                print(f"   -> Found! Email: {lead['email_1']} | Phone: {lead['phone']}")
+            else:
+                print("   -> No contact info found.")
+        except Exception as e:
+            print(f"   -> Error enriching {domain}: {e}")
+            
+    print(f"=== ENRICHMENT COMPLETE. Successfully enriched {enriched_count} leads. ===")
+
 def show_stats():
     from db.client import DatabaseClient
     db = DatabaseClient()
@@ -101,6 +145,7 @@ def show_stats():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="CAD LINK Freelance Bot V1.3")
     parser.add_argument('--run-scrapers', action='store_true', help="Run all data scrapers")
+    parser.add_argument('--run-enrichment', action='store_true', help="Enrich leads missing emails")
     parser.add_argument('--send-emails', action='store_true', help="Send automated cold emails")
     parser.add_argument('--email-limit', type=int, default=20, help="Max number of emails to send")
     parser.add_argument('--phase', type=int, default=1, choices=[1,2,3], help="Campaign phase (1=ME, 2=India, 3=All)")
@@ -111,6 +156,9 @@ if __name__ == '__main__':
     
     if args.run_scrapers:
         run_scrapers()
+        
+    if args.run_enrichment:
+        enrich_leads(limit=100)
         
     if args.send_emails:
         from db.client import DatabaseClient

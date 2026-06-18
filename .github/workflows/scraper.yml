@@ -28,9 +28,10 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Run Scrapers
+    - name: Run Scrapers and Enrichment
       run: |
         python run.py --run-scrapers
+        python run.py --run-enrichment
       env:
         BING_API_KEY: ${{ secrets.BING_API_KEY }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
