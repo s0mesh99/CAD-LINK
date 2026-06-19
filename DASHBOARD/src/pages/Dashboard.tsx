@@ -8,7 +8,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { CRMBoard } from '../components/CRMBoard';
 
 export function DashboardOverview() {
-  const [stats, setStats] = useState({ totalLeads: 0, premiumLeads: 0, totalEmails: 0, bouncedEmails: 0 });
+  const [stats, setStats] = useState({ totalLeads: 0, premiumLeads: 0, totalEmails: 0, bouncedEmails: 0, enrichedEmails: 0 });
   const [runs, setRuns] = useState<any[]>([]);
   const [leads, setLeads] = useState<any[]>([]);
   const [emails, setEmails] = useState<any[]>([]);
@@ -24,6 +24,7 @@ export function DashboardOverview() {
   const [filterQuality, setFilterQuality] = useState('all');
   const [filterCountry, setFilterCountry] = useState('all');
   const [filterSector, setFilterSector] = useState('all');
+  const [filterEmail, setFilterEmail] = useState('all');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectedLead, setSelectedLead] = useState<any | null>(null);
 
@@ -39,12 +40,15 @@ export function DashboardOverview() {
     const { count: premiumLeads } = await supabase.from('companies').select('*', { count: 'exact', head: true }).gte('quality_score', 3);
     const { count: totalEmails } = await supabase.from('email_tracking').select('*', { count: 'exact', head: true });
     const { count: bouncedEmails } = await supabase.from('email_tracking').select('*', { count: 'exact', head: true }).eq('bounced', 1);
+    const { count: enrichedEmails1 } = await supabase.from('companies').select('*', { count: 'exact', head: true }).not('email_1', 'is', null);
+    const { count: enrichedEmails2 } = await supabase.from('companies').select('*', { count: 'exact', head: true }).not('contact_email', 'is', null);
     
     setStats({
       totalLeads: totalLeads || 0,
       premiumLeads: premiumLeads || 0,
       totalEmails: totalEmails || 0,
-      bouncedEmails: bouncedEmails || 0
+      bouncedEmails: bouncedEmails || 0,
+      enrichedEmails: (enrichedEmails1 || 0) + (enrichedEmails2 || 0)
     });
 
     // Scrapers
@@ -141,7 +145,10 @@ export function DashboardOverview() {
                            filterQuality === 'standard' ? l.quality_score < 3 : true;
     const matchesCountry = filterCountry === 'all' ? true : l.country === filterCountry;
     const matchesSector = filterSector === 'all' ? true : l.sector === filterSector;
-    return matchesSearch && matchesQuality && matchesCountry && matchesSector;
+    const matchesEmail = filterEmail === 'all' ? true :
+                         filterEmail === 'with_email' ? !!(l.email_1 || l.contact_email || l.email) :
+                         filterEmail === 'no_email' ? !(l.email_1 || l.contact_email || l.email) : true;
+    return matchesSearch && matchesQuality && matchesCountry && matchesSector && matchesEmail;
   });
 
   // Extract unique countries and sectors for filter dropdowns
@@ -171,9 +178,10 @@ export function DashboardOverview() {
     <div className="space-y-8 animate-in fade-in duration-500">
       
       {/* 1. KPI CARDS ROW */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
         <StatCard title="Total Leads" value={stats.totalLeads} valueColor="text-blue-600" />
         <StatCard title="Premium Leads" value={stats.premiumLeads} valueColor="text-[#0F766E]" />
+        <StatCard title="Enriched Emails" value={stats.enrichedEmails} valueColor="text-green-600" />
         <StatCard title="Emails Sent" value={stats.totalEmails} valueColor="text-indigo-600" />
         <StatCard title="Bounced Emails" value={stats.bouncedEmails} valueColor="text-red-600" />
       </div>
@@ -227,6 +235,12 @@ export function DashboardOverview() {
               <select value={filterSector} onChange={e => setFilterSector(e.target.value)} className="border border-slate-300 rounded-md px-2 py-1.5 text-sm bg-white focus:outline-none focus:border-[#0F766E] max-w-[120px]">
                 <option value="all">All Sectors</option>
                 {sectors.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+              
+              <select value={filterEmail} onChange={e => setFilterEmail(e.target.value)} className="border border-slate-300 rounded-md px-2 py-1.5 text-sm bg-white focus:outline-none focus:border-[#0F766E]">
+                <option value="all">All Emails</option>
+                <option value="with_email">Has Email</option>
+                <option value="no_email">No Email</option>
               </select>
 
               <button onClick={handleExportCSV} className="border border-slate-300 hover:bg-slate-50 text-slate-700 px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2 transition-colors">
