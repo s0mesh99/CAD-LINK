@@ -18,6 +18,7 @@ from scrapers.base_scraper import BaseScraper
 from utils.user_agents import get_headers
 from utils.name_parser import (extract_name_and_title_from_linkedin_title,
                                 is_valid_person_name)
+from duckduckgo_search import DDGS
 
 DDG_URL = "https://html.duckduckgo.com/html/"
 
@@ -71,58 +72,34 @@ CONTRACT_AWARD_QUERIES = [
 class DuckDuckGoScraper(BaseScraper):
 
     def __init__(self):
-        super().__init__('duckduckgo_search', min_delay=3.0, max_delay=8.0)
-        self.session = requests.Session()
+        super().__init__('duckduckgo_search', min_delay=1.0, max_delay=3.0)
 
     def search(self, query: str, max_results: int = 10, retries: int = 3) -> list:
         """
-        POST to DDG HTML endpoint.
+        Uses the official duckduckgo-search package (DDGS) to bypass HTML limits.
         """
         self.limiter.wait(context=query[:40])
         
         for attempt in range(retries):
             try:
-                resp = self.session.post(
-                    DDG_URL,
-                    data={'q': query, 'b': '', 'kl': 'us-en'},
-                    headers=get_headers('https://duckduckgo.com'),
-                    timeout=15
-                )
-                if resp.status_code == 202 or resp.status_code == 403:
-                    self.log.warning(f"DDG returned {resp.status_code}. Rate limit hit. Waiting 60s...")
-                    import time
-                    time.sleep(60)
-                    continue
+                with DDGS() as ddgs:
+                    results = list(ddgs.text(query, max_results=max_results))
                     
-                if resp.status_code != 200:
-                    self.log.warning(f"DDG returned {resp.status_code}")
-                    return []
-
-                soup  = BeautifulSoup(resp.text, 'lxml')
-                items = soup.select('div.result')
-                results = []
-                for item in items[:max_results]:
-                    title_tag   = item.select_one('a.result__a')
-                    snippet_tag = item.select_one('a.result__snippet')
-                    if not title_tag:
-                        continue
-                    url = title_tag.get('href', '')
-                    results.append({
-                        'title':   title_tag.get_text(strip=True),
-                        'url':     url,
-                        'snippet': snippet_tag.get_text(strip=True)
-                                  if snippet_tag else '',
+                formatted_results = []
+                for res in results:
+                    formatted_results.append({
+                        'title': res.get('title', ''),
+                        'url': res.get('href', ''),
+                        'snippet': res.get('body', '')
                     })
-                return results
-
-            except requests.exceptions.Timeout:
-                self.log.error("DDG search timeout. Waiting 30s...")
-                import time
-                time.sleep(30)
+                return formatted_results
+                
             except Exception as e:
-                self.log.error(f"DDG search error: {e}. Waiting 30s...")
+                self.log.warning(f"DDG search error: {e}. Waiting 5s...")
                 import time
-                time.sleep(30)
+                time.sleep(5)
+                
+        self.log.error(f"Failed to fetch DDG results for '{query}' after {retries} retries.")
         self.errors += 1
         return []
 
