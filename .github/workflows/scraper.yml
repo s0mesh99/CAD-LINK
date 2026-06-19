@@ -34,8 +34,11 @@ jobs:
       run: |
         python run.py --run-scrapers
         python run.py --run-enrichment
+        python run.py --send-emails
       env:
         BING_API_KEY: ${{ secrets.BING_API_KEY }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
         SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        ZOHO_EMAIL: ${{ secrets.ZOHO_EMAIL }}
+        ZOHO_APP_PASSWORD: ${{ secrets.ZOHO_APP_PASSWORD }}

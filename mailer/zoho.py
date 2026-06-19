@@ -8,11 +8,10 @@ from db.client import DatabaseClient
 ZOHO_SMTP_HOST = 'smtp.zoho.in'
 ZOHO_SMTP_PORT = 465
 
-def plain_to_html(plain_text: str, pixel_url: str) -> str:
+def plain_to_html(plain_text: str) -> str:
     """
     Convert plain text email to minimal clean HTML.
     Preserves line breaks and bullet points.
-    Appends tracking pixel.
     No heavy newsletter styling — looks like a real person wrote it.
     """
     lines = plain_text.strip().split('\n')
@@ -29,16 +28,10 @@ def plain_to_html(plain_text: str, pixel_url: str) -> str:
         else:
             html_lines.append(f'<p style="margin:4px 0;">{line}</p>')
 
-    pixel = (
-        f'<img src="{pixel_url}" width="1" height="1" '
-        f'style="display:none;" alt="">'
-    )
-
     return f"""
     <html><body style="font-family:Arial,sans-serif;font-size:14px;
     color:#1C2833;max-width:560px;margin:0 auto;padding:20px;">
     {''.join(html_lines)}
-    {pixel}
     </body></html>
     """
 
@@ -117,12 +110,8 @@ def send_campaign(phase: int = 1, limit: int = 20,
         # Plain text version (always include — spam filters prefer it)
         msg.attach(MIMEText(body, 'plain'))
 
-        # HTML version with tracking pixel
-        tracking_base = os.environ.get(
-            'TRACKING_BASE_URL', 'https://cadlink.in'
-        )
-        pixel_url = f"{tracking_base}/pixel/{lead['id']}.png"
-        html_body = plain_to_html(body, pixel_url)
+        # HTML version without tracking pixel
+        html_body = plain_to_html(body)
         msg.attach(MIMEText(html_body, 'html'))
 
         # Send
@@ -196,9 +185,7 @@ def send_follow_ups(dry_run: bool = False):
 
         msg.attach(MIMEText(body, 'plain'))
         
-        tracking_base = os.environ.get('TRACKING_BASE_URL', 'https://cadlink.in')
-        pixel_url = f"{tracking_base}/pixel/{lead['id']}.png"
-        html_body = plain_to_html(body, pixel_url)
+        html_body = plain_to_html(body)
         msg.attach(MIMEText(html_body, 'html'))
 
         # Send
