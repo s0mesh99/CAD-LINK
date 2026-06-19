@@ -42,8 +42,8 @@ def send_campaign(phase: int = 1, limit: int = 20,
     dry_run=True prints emails to terminal without sending.
     """
     import os
-    ZOHO_EMAIL    = os.environ.get('ZOHO_EMAIL', 'somesh.nammina@cadlink.in')
-    ZOHO_PASSWORD = os.environ.get('ZOHO_APP_PASSWORD', 'bFZp0iNjXYk7')
+    ZOHO_EMAIL    = os.environ.get('ZOHO_EMAIL') or 'somesh.nammina@cadlink.in'
+    ZOHO_PASSWORD = os.environ.get('ZOHO_APP_PASSWORD') or 'bFZp0iNjXYk7'
 
     db = DatabaseClient()
     leads = db.get_leads_for_campaign(phase, limit)
@@ -150,8 +150,8 @@ def send_follow_ups(dry_run: bool = False):
     import os
     db = DatabaseClient()
     
-    ZOHO_EMAIL    = os.environ.get('ZOHO_EMAIL', 'somesh.nammina@cadlink.in')
-    ZOHO_PASSWORD = os.environ.get('ZOHO_APP_PASSWORD', 'bFZp0iNjXYk7')
+    ZOHO_EMAIL    = os.environ.get('ZOHO_EMAIL') or 'somesh.nammina@cadlink.in'
+    ZOHO_PASSWORD = os.environ.get('ZOHO_APP_PASSWORD') or 'bFZp0iNjXYk7'
 
     due = db.get_due_follow_ups(limit=20)
 
