@@ -6,25 +6,28 @@
 TEMPLATE_UAE = """
 {salutation}
 
-I'm a Civil & Structural CAD draftsman with 5 years on O&G EPC
-projects built to ADNOC and Aramco delivery standards.
+I'm an independent Civil & Structural CAD specialist with 5+ years 
+of EPC project experience across O&G, industrial, and infrastructure 
+projects (built to ADNOC and Aramco standards).
 
-I provide remote 2D drafting support for EPC firms:
+I provide remote drafting and 3D modeling support for EPC firms, 
+without the typical agency overheads:
 
   • Piperacks, structural platforms, equipment foundations
-  • AutoCAD and MicroStation (DGN files, seed file compliant)
-  • IFR/IFC drawing packages with full revision history
-  • 24–48 hr turnaround on standard sheets
+  • AutoCAD, MicroStation, Tekla, SmartPlant 3D (S3D), and E3D
+  • Rapid resource scaling (no recruitment cycles or idle bench costs)
+  • 24-48 hr turnarounds with zero long-term commitments
 
-I'd like to offer one sample drawing on {company_name}'s project
-standard at no charge — so you can evaluate quality before
-committing to anything.
+I offer a "Zero-Risk Guarantee" — I will complete your first drawing
+at no cost, against your exact project standards, so you can evaluate
+the quality before committing to anything.
 
 Worth a 10-minute call this week?
 
 Somesh Nammina
+Independent EPC Drafting Studio
 CAD LINK | cadlink.in
-Hyderabad, India | somesh.nammina@cadlink.in
+somesh.nammina@cadlink.in
 """
 
 TEMPLATE_UAE_SUBJECT = (
@@ -40,24 +43,27 @@ TEMPLATE_UAE_SUBJECT = (
 TEMPLATE_INDIA = """
 {salutation}
 
-I'm a Hyderabad-based Civil & Structural CAD specialist with
-5 years of EPC project experience across O&G, industrial plants,
-and infrastructure.
+I'm an independent Civil & Structural CAD specialist based in Hyderabad,
+with 5+ years of EPC project experience across O&G, industrial, and
+infrastructure projects.
 
-I support EPC firms that need reliable overflow drafting:
+I support EPC firms that need reliable overflow drafting without
+the heavy agency markups:
 
   • Foundation layouts, piperack drawings, platform details
-  • AutoCAD 2D and MicroStation — both tools
-  • Flexible: per-drawing, per-week, or monthly retainer
+  • AutoCAD, MicroStation, Tekla, SmartPlant 3D (S3D), and E3D
+  • Flexible support: per-drawing, weekly, or monthly retainers
 
-Happy to share my portfolio or provide a free sample drawing on
-{company_name}'s standard — no strings attached.
+I offer a Zero-Risk Guarantee — I will complete your first drawing
+on {company_name}'s exact standard at no cost, so you can evaluate
+my work before making any commitments.
 
 Can we connect for a quick call?
 
 Somesh Nammina
+Independent EPC Drafting Studio
 CAD LINK | cadlink.in
-Hyderabad | somesh.nammina@cadlink.in
+somesh.nammina@cadlink.in
 """
 
 TEMPLATE_INDIA_SUBJECT = (
@@ -76,19 +82,21 @@ TEMPLATE_TENDER = """
 I noticed {company_name} has an active project in
 {tender_description}.
 
-I'm a Civil & Structural CAD draftsman with 5 years of EPC
-experience — I provide remote AutoCAD and MicroStation 2D
-drafting support for exactly this type of project work.
+I'm an independent Civil & Structural CAD specialist with 5+ years 
+of EPC experience — I provide scalable drafting and 3D modeling 
+support (AutoCAD, MicroStation, Tekla, S3D) for exactly this type 
+of project work, without the agency overheads.
 
-If you need additional CAD capacity for this project, I can
-start immediately. Happy to provide one drawing at no charge
-as proof of work.
+If you need rapid, standards-compliant CAD capacity for this project, 
+I can start immediately. I am happy to provide your first drawing at 
+no charge as proof of quality.
 
 15 minutes this week?
 
 Somesh Nammina
+Independent EPC Drafting Studio
 CAD LINK | cadlink.in
-Hyderabad | somesh.nammina@cadlink.in
+somesh.nammina@cadlink.in
 """
 
 TEMPLATE_TENDER_SUBJECT = (
@@ -104,15 +112,17 @@ TEMPLATE_TENDER_SUBJECT = (
 TEMPLATE_FOLLOWUP = """
 {salutation}
 
-Just following up on my note from last week about remote CAD
-drafting support for {company_name}.
+Just following up on my note from last week regarding scalable 
+Civil & Structural drafting support for {company_name}.
 
-Quick version: I'm offering one free sample drawing on your
-project standard — no commitment needed to try it.
+Quick version: I operate an independent CAD studio and offer a 
+Zero-Risk Guarantee. I will draft your first drawing matching 
+your exact standards at no cost — no commitment needed to try it.
 
 If bandwidth ever becomes an issue, I'm available immediately.
 
 Somesh Nammina
+Independent EPC Drafting Studio
 CAD LINK | cadlink.in
 """
 
