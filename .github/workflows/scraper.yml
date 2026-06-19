@@ -2,8 +2,8 @@ name: CAD LINK Daily Scraper
 
 on:
   schedule:
-    # Runs at 00:00 UTC and 12:00 UTC every day
-    - cron: '0 0,12 * * *'
+    # Runs at 00:00 UTC and 12:00 UTC Monday through Friday
+    - cron: '0 0,12 * * 1-5'
   workflow_dispatch: # Allows manual trigger from GitHub UI
 
 jobs:
