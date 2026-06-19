@@ -28,10 +28,18 @@ def plain_to_html(plain_text: str) -> str:
         else:
             html_lines.append(f'<p style="margin:4px 0;">{line}</p>')
 
+    logo_html = '''
+    <br><br>
+    <a href="https://cadlink.in" style="text-decoration:none;">
+        <img src="https://cad-link.web.app/logo.png" alt="CAD LINK" width="140" style="display:block; margin-top:10px;">
+    </a>
+    '''
+
     return f"""
     <html><body style="font-family:Arial,sans-serif;font-size:14px;
     color:#1C2833;max-width:560px;margin:0 auto;padding:20px;">
     {''.join(html_lines)}
+    {logo_html}
     </body></html>
     """
 
