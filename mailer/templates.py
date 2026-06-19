@@ -6,7 +6,7 @@
 TEMPLATE_UAE = """
 {salutation}
 
-I'm an independent Civil & Structural CAD specialist with 5+ years 
+I'm a freelance Civil & Structural CAD specialist with 5+ years 
 of EPC project experience across O&G, industrial, and infrastructure 
 projects (built to ADNOC and Aramco standards).
 
@@ -25,7 +25,7 @@ the quality before committing to anything.
 Worth a 10-minute call this week?
 
 Somesh Nammina
-Independent EPC Drafting Studio
+Freelance CAD Specialist
 CAD LINK | cadlink.in
 somesh.nammina@cadlink.in
 """
@@ -43,7 +43,7 @@ TEMPLATE_UAE_SUBJECT = (
 TEMPLATE_INDIA = """
 {salutation}
 
-I'm an independent Civil & Structural CAD specialist based in Hyderabad,
+I'm a freelance Civil & Structural CAD specialist based in Hyderabad,
 with 5+ years of EPC project experience across O&G, industrial, and
 infrastructure projects.
 
@@ -61,7 +61,7 @@ my work before making any commitments.
 Can we connect for a quick call?
 
 Somesh Nammina
-Independent EPC Drafting Studio
+Freelance CAD Specialist
 CAD LINK | cadlink.in
 somesh.nammina@cadlink.in
 """
@@ -82,7 +82,7 @@ TEMPLATE_TENDER = """
 I noticed {company_name} has an active project in
 {tender_description}.
 
-I'm an independent Civil & Structural CAD specialist with 5+ years 
+I'm a freelance Civil & Structural CAD specialist with 5+ years 
 of EPC experience — I provide scalable drafting and 3D modeling 
 support (AutoCAD, MicroStation, Tekla, S3D) for exactly this type 
 of project work, without the agency overheads.
@@ -94,7 +94,7 @@ no charge as proof of quality.
 15 minutes this week?
 
 Somesh Nammina
-Independent EPC Drafting Studio
+Freelance CAD Specialist
 CAD LINK | cadlink.in
 somesh.nammina@cadlink.in
 """
@@ -115,14 +115,14 @@ TEMPLATE_FOLLOWUP = """
 Just following up on my note from last week regarding scalable 
 Civil & Structural drafting support for {company_name}.
 
-Quick version: I operate an independent CAD studio and offer a 
+Quick version: I work as a freelance CAD specialist and offer a 
 Zero-Risk Guarantee. I will draft your first drawing matching 
 your exact standards at no cost — no commitment needed to try it.
 
 If bandwidth ever becomes an issue, I'm available immediately.
 
 Somesh Nammina
-Independent EPC Drafting Studio
+Freelance CAD Specialist
 CAD LINK | cadlink.in
 """
 

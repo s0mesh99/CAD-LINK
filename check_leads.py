@@ -19,7 +19,7 @@ if not leads:
     print("No leads found in database.")
     exit()
 
-with_email = sum(1 for l in leads if l.get("contact_email") or l.get("email"))
+with_email = sum(1 for l in leads if l.get("email_1") or l.get("email_2") or l.get("contact_email") or l.get("email"))
 with_domain = sum(1 for l in leads if l.get("domain"))
 sectors = {}
 for l in leads:
@@ -37,4 +37,4 @@ for k, v in sorted(sectors.items(), key=lambda x: x[1], reverse=True):
     
 print("\nSample Leads:")
 for l in leads[:5]:
-    print(f"[{l.get('quality_score')}/5] {l.get('name')} | {l.get('domain')} | {l.get('contact_email') or l.get('email')} | {l.get('sector')}")
+    print(f"[{l.get('quality_score')}/5] {l.get('name')} | {l.get('domain')} | {l.get('email_1') or l.get('contact_email') or l.get('email')} | {l.get('sector')}")
