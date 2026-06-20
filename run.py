@@ -4,8 +4,6 @@ from scrapers.duckduckgo_search import DuckDuckGoScraper
 from scrapers.pdf_miner import PDFMinerScraper
 from scrapers.industry_rss import IndustryRSSScraper
 from scrapers.gem_opendata import GeMOpenDataScraper
-from scrapers.bing_search import BingSearchScraper
-from scrapers.github_lists import GithubListsScraper
 from scrapers.github_api import GithubApiScraper
 from scrapers.domain_cluster import DomainClusterScraper
 from scrapers.wikipedia_targeted import WikipediaTargetedScraper
@@ -22,8 +20,6 @@ def run_scrapers():
         PDFMinerScraper(),
         IndustryRSSScraper(),
         GeMOpenDataScraper(),
-        BingSearchScraper(),
-        GithubListsScraper(),
         DomainClusterScraper(),
     ]
     
