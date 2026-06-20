@@ -116,8 +116,7 @@ class DuckDuckGoScraper(BaseScraper):
         Given a search result for a company contact page,
         extract domain, visit the page, pull email + info.
         """
-        from scrapers.company_website import WebsiteContactScraper
-        ws = WebsiteContactScraper()
+        from scrapers.company_website import extract_from_website
 
         url    = result['url']
         domain = self.clean_domain(url)
@@ -126,7 +125,7 @@ class DuckDuckGoScraper(BaseScraper):
         if self.domain_exists(domain):
             return {}
 
-        contact_data = ws.extract_contact(domain)
+        contact_data = extract_from_website(domain)
 
         return {
             'name':          name,
@@ -179,7 +178,7 @@ class DuckDuckGoScraper(BaseScraper):
 
     def run_company_queries(self):
         self.log.info("Running company search queries...")
-        for query in COMPANY_QUERIES:
+        for query in self.company_queries:
             results = self.search(query)
             for r in results:
                 if 'linkedin.com' in r['url']:
@@ -191,7 +190,7 @@ class DuckDuckGoScraper(BaseScraper):
 
     def run_pdf_queries(self):
         self.log.info("Running PDF search queries...")
-        for query in PDF_QUERIES:
+        for query in self.pdf_queries:
             results = self.search(query)
             for r in results:
                 self.process_pdf_result(r)
@@ -200,7 +199,7 @@ class DuckDuckGoScraper(BaseScraper):
     def run_people_queries(self):
         self.log.info("Running people/LinkedIn queries...")
         people_found = []
-        for query in PEOPLE_QUERIES:
+        for query in self.people_queries:
             results = self.search(query)
             for r in results:
                 if 'linkedin.com/in/' not in r['url']:
@@ -219,7 +218,7 @@ class DuckDuckGoScraper(BaseScraper):
 
     def run_contract_award_queries(self):
         self.log.info("Running contract award queries...")
-        for query in CONTRACT_AWARD_QUERIES:
+        for query in self.contract_queries:
             results = self.search(query)
             for r in results:
                 # Extract company names from snippets
@@ -313,6 +312,49 @@ class DuckDuckGoScraper(BaseScraper):
             data.setdefault('sub_sector', 'engineering_consultancy')
 
     def run(self):
+        # 1. Fetch Dynamic Configuration from Supabase
+        regions = REGIONS
+        services = SERVICES
+        
+        if hasattr(self, 'db') and getattr(self.db, 'supabase', None):
+            try:
+                res = self.db.supabase.table('scraper_config').select('*').execute()
+                if res.data:
+                    for row in res.data:
+                        if row['config_type'] == 'regions' and row['config_data']:
+                            regions = row['config_data']
+                        elif row['config_type'] == 'services' and row['config_data']:
+                            services = row['config_data']
+                self.log.info(f"Loaded config from DB: {len(regions)} regions, {len(services)} services.")
+            except Exception as e:
+                self.log.warning(f"Could not load dynamic config from Supabase, using defaults. Error: {e}")
+
+        # 2. Generate Queries
+        self.company_queries = [f'{service} {region} "contact us" OR "email"' for service in services for region in regions]
+        
+        self.pdf_queries = [
+            f'{service} {region} "capability statement" OR "company profile" filetype:pdf'
+            for service in services[:4]
+            for region in regions[:10]
+        ] + [
+            '"approved vendor list" "engineering" "structural" filetype:pdf',
+            '"contractor list" "EPC" "oil and gas" OR "data center" OR "renewable" filetype:pdf',
+            '"prequalified contractors" "civil structural" filetype:pdf',
+        ]
+        
+        self.people_queries = [
+            f'site:linkedin.com/in "Head of Engineering" OR "CAD Manager" OR "Structural Lead" {region} {sector}'
+            for region in regions[:15]
+            for sector in services[:5]
+        ]
+        
+        self.contract_queries = [
+            f'"awarded contract" OR "contract award" {service} {region} 2024 OR 2025'
+            for service in services[:5]
+            for region in regions[:10]
+        ]
+
+        # 3. Execute Scrapes
         self.run_company_queries()
         self.run_pdf_queries()
         self.run_people_queries()
