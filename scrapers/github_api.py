@@ -8,11 +8,11 @@ GITHUB_SEARCH_API = "https://api.github.com/search/code"
 
 QUERIES = [
     'extension:csv "EPC" "company"',
-    'extension:csv "structural engineering" "email"',
-    'extension:csv "civil engineering" "contact"',
-    'extension:json "construction companies"',
-    'extension:md "EPC companies" "email"',
-    'extension:csv "oil and gas" "vendor list"',
+    'extension:csv "data center" "construction"',
+    'extension:csv "renewable energy" "contractor"',
+    'extension:csv "engineering" "consultants" "Dubai"',
+    'extension:json "contractors" "structural"',
+    'extension:md "Top EPC Companies"',
 ]
 
 EMAIL_RE = re.compile(r'\b[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}\b')

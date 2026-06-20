@@ -4,6 +4,11 @@ from scrapers.base_scraper import BaseScraper
 
 SEARCH_QUERIES = [
     '"EPC" "structural engineering" "capability statement" filetype:pdf',
+    '"data center" "mission critical" "capability statement" filetype:pdf',
+    '"renewable energy" "solar farm" "company profile" filetype:pdf',
+    '"approved vendor list" "engineering" "structural" filetype:pdf',
+    '"contractor list" "EPC" "oil and gas" filetype:pdf',
+    '"prequalified contractors" "civil" "structural" filetype:pdf',
     '"civil engineering" "oil and gas" "company profile" filetype:pdf',
     '"engineering consultancy" "AutoCAD" "MicroStation" filetype:pdf',
     '"structural steel" "fabrication" "India" "company profile" filetype:pdf',

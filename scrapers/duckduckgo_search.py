@@ -36,36 +36,44 @@ REGIONS = [
 ]
 
 SERVICES = [
-    '"EPC"', '"EPC contractor"', '"engineering consultancy"', '"civil engineering"', 
-    '"structural engineering"', '"fabrication"', '"structural steel"', '"pipeline"', 
-    '"process plant"', '"offshore"', '"marine engineering"', '"LNG"'
+    # General EPC / Consulting
+    '"EPC"', '"EPC contractor"', '"engineering consultancy"', '"civil engineering"', '"structural engineering"',
+    # Data Centers & Tech Infra (High demand for civil/structural)
+    '"data center construction"', '"data center engineering"', '"mission critical facilities"',
+    # Energy (Renewable & Non-renewable)
+    '"renewable energy contractor"', '"solar farm construction"', '"wind farm engineering"', 
+    '"substation design"', '"power plant construction"', '"oil and gas"', '"LNG"', '"pipeline"',
+    # Heavy Industrial & Marine
+    '"process plant"', '"offshore"', '"marine engineering"', '"fabrication"', '"structural steel"'
 ]
 
 COMPANY_QUERIES = [f'{service} {region} "contact us" OR "email"' for service in SERVICES for region in REGIONS]
 
 PDF_QUERIES = [
     f'{service} {region} "capability statement" OR "company profile" filetype:pdf'
-    for service in ['"EPC"', '"structural engineering"', '"civil contractor"', '"fabrication"']
+    for service in ['"EPC"', '"structural engineering"', '"data center construction"', '"renewable energy contractor"']
     for region in REGIONS[:20]  # First 20 regions to limit PDF volume
 ] + [
     '"approved vendor list" "engineering" "structural" filetype:pdf',
-    '"contractor list" "EPC" "oil and gas" filetype:pdf',
+    '"contractor list" "EPC" "oil and gas" OR "data center" OR "renewable" filetype:pdf',
     '"prequalified contractors" "civil structural" filetype:pdf',
 ]
 
 PEOPLE_QUERIES = [
-    f'site:linkedin.com/in "Head of Engineering" OR "CAD Manager" OR "Structural Lead" {region} "EPC"'
+    f'site:linkedin.com/in "Head of Engineering" OR "CAD Manager" OR "Structural Lead" {region} {sector}'
     for region in REGIONS
+    for sector in ['"EPC"', '"Data Center"', '"Renewable Energy"', '"Oil and Gas"']
 ]
 
 JOB_QUERIES = [
-    f'"CAD drafter" OR "structural engineer" {region} "EPC" job OR vacancy'
+    f'"CAD drafter" OR "structural engineer" {region} {sector} job OR vacancy'
     for region in REGIONS
+    for sector in ['"EPC"', '"Data Center"', '"Renewable"', '"Energy"']
 ]
 
 CONTRACT_AWARD_QUERIES = [
     f'"awarded contract" OR "contract award" {service} {region} 2024 OR 2025'
-    for service in ['"EPC"', '"engineering"', '"structural"']
+    for service in ['"EPC"', '"data center"', '"solar farm"', '"wind farm"', '"substation"']
     for region in ['"UAE"', '"Saudi Arabia"', '"Qatar"', '"India"', '"Australia"', '"UK"']
 ]
 
