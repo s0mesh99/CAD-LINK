@@ -1,11 +1,13 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { Database, Users, LogOut } from 'lucide-react';
+import { Database, Users, LogOut, Settings, Mail } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
+
+export type TabType = 'scrapers' | 'leads' | 'config' | 'templates';
 
 export function Layout({ 
   children, 
@@ -14,8 +16,8 @@ export function Layout({
   onLogout
 }: { 
   children: React.ReactNode,
-  currentTab?: 'scrapers' | 'leads',
-  setCurrentTab?: (tab: 'scrapers' | 'leads') => void,
+  currentTab?: TabType,
+  setCurrentTab?: (tab: TabType) => void,
   onLogout?: () => void
 }) {
   return (
@@ -29,7 +31,7 @@ export function Layout({
               <span className="text-cadlink-600">Link</span>
             </div>
             <div className="px-2 py-0.5 bg-cadlink-50 border border-cadlink-200 text-cadlink-700 text-[10px] font-bold rounded-full uppercase tracking-wider ml-1">
-              ADMIN
+              ADMIN V1.2
             </div>
           </div>
 
@@ -53,7 +55,27 @@ export function Layout({
                 )}
               >
                 <Users className="w-4 h-4" />
-                Inbound Leads
+                Leads
+              </button>
+              <button 
+                onClick={() => setCurrentTab('config')}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all",
+                  currentTab === 'config' ? "bg-white text-cadlink-700 shadow-sm border border-slate-200/50" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                )}
+              >
+                <Settings className="w-4 h-4" />
+                Config
+              </button>
+              <button 
+                onClick={() => setCurrentTab('templates')}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all",
+                  currentTab === 'templates' ? "bg-white text-cadlink-700 shadow-sm border border-slate-200/50" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                )}
+              >
+                <Mail className="w-4 h-4" />
+                Templates
               </button>
             </nav>
           )}

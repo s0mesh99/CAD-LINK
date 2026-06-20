@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { Lock, ArrowRight } from 'lucide-react';
+import { Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
 
 interface LoginProps {
   onLogin: () => void;
@@ -8,6 +8,7 @@ interface LoginProps {
 
 export function LoginScreen({ onLogin }: LoginProps) {
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -45,14 +46,23 @@ export function LoginScreen({ onLogin }: LoginProps) {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Admin Password"
-              className={`w-full bg-white border ${error ? 'border-red-500 focus:ring-red-500' : 'border-slate-200 focus:border-cadlink-500 focus:ring-cadlink-500'} rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-1 transition-colors shadow-sm`}
-              autoFocus
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Admin Password"
+                className={`w-full bg-white border ${error ? 'border-red-500 focus:ring-red-500' : 'border-slate-200 focus:border-cadlink-500 focus:ring-cadlink-500'} rounded-xl px-4 py-3 pr-12 text-slate-900 focus:outline-none focus:ring-1 transition-colors shadow-sm`}
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
+              >
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
+            </div>
             {error && <p className="text-red-500 text-sm mt-2 font-medium">Incorrect password.</p>}
           </div>
 

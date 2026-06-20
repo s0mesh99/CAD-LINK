@@ -129,27 +129,60 @@ CAD LINK | cadlink.in
 TEMPLATE_FOLLOWUP_SUBJECT = "Re: CAD Drafting Support — Quick Follow-Up"
 
 
-# ─────────────────────────────────────────────────────────────
-# TEMPLATE SELECTOR — called by mailer/zoho.py
-# ─────────────────────────────────────────────────────────────
+_cached_templates = None
+
+def fetch_templates_from_db():
+    global _cached_templates
+    if _cached_templates is not None:
+        return _cached_templates
+    
+    _cached_templates = {
+        'TEMPLATE_GLOBAL': (TEMPLATE_UAE_SUBJECT, TEMPLATE_UAE),
+        'TEMPLATE_INDIA': (TEMPLATE_INDIA_SUBJECT, TEMPLATE_INDIA),
+        'TEMPLATE_TENDER': (TEMPLATE_TENDER_SUBJECT, TEMPLATE_TENDER),
+        'TEMPLATE_FOLLOWUP': (TEMPLATE_FOLLOWUP_SUBJECT, TEMPLATE_FOLLOWUP)
+    }
+    
+    try:
+        from db.client import DatabaseClient
+        db = DatabaseClient()
+        if db.supabase:
+            res = db.supabase.table('email_templates').select('*').execute()
+            if res.data:
+                for row in res.data:
+                    _cached_templates[row['template_name']] = (row['subject'], row['body_html'])
+    except Exception as e:
+        import logging
+        logging.warning(f"Could not load dynamic templates from Supabase, using defaults. Error: {e}")
+        
+    return _cached_templates
+
 def select_template(lead: dict, is_followup: bool = False):
     """
-    Returns (subject, body_template) tuple.
-    Priority order:
-    1. Follow-up flag
-    2. Active tender
-    3. Country = Middle East → Template A
-    4. Country = India → Template B
-    5. Default → Template A (safest)
+    Returns (subject, body_template, template_name) tuple dynamically from Supabase.
+    Supports A/B testing: If multiple variants exist (e.g., TEMPLATE_GLOBAL_A, TEMPLATE_GLOBAL_B),
+    it randomly selects one.
     """
+    import random
+    templates = fetch_templates_from_db()
+
+    def get_variant(prefix: str, default_subj: str, default_body: str):
+        # Find all templates that start with this prefix (e.g. TEMPLATE_GLOBAL, TEMPLATE_GLOBAL_A)
+        variants = {k: v for k, v in templates.items() if k == prefix or k.startswith(f"{prefix}_")}
+        if not variants:
+            return (default_subj, default_body, prefix)
+        
+        # Pick one randomly
+        chosen_key = random.choice(list(variants.keys()))
+        subj, body = variants[chosen_key]
+        return (subj, body, chosen_key)
+
     if is_followup:
-        return TEMPLATE_FOLLOWUP_SUBJECT, TEMPLATE_FOLLOWUP
+        return get_variant('TEMPLATE_FOLLOWUP', TEMPLATE_FOLLOWUP_SUBJECT, TEMPLATE_FOLLOWUP)
 
     if lead.get('has_active_tender'):
-        subj = TEMPLATE_TENDER_SUBJECT.format(
-            company_name=lead.get('name', '')
-        )
-        return subj, TEMPLATE_TENDER
+        subj, body, t_name = get_variant('TEMPLATE_TENDER', TEMPLATE_TENDER_SUBJECT, TEMPLATE_TENDER)
+        return subj.replace('{company}', lead.get('name', '')), body, t_name
 
     country = lead.get('country', '')
     me_countries = [
@@ -158,13 +191,13 @@ def select_template(lead: dict, is_followup: bool = False):
     ]
 
     if country in me_countries:
-        return TEMPLATE_UAE_SUBJECT, TEMPLATE_UAE
+        return get_variant('TEMPLATE_GLOBAL', TEMPLATE_UAE_SUBJECT, TEMPLATE_UAE)
 
     if country == 'India' or lead.get('region') == 'India':
-        return TEMPLATE_INDIA_SUBJECT, TEMPLATE_INDIA
+        return get_variant('TEMPLATE_INDIA', TEMPLATE_INDIA_SUBJECT, TEMPLATE_INDIA)
 
     # Default fallback
-    return TEMPLATE_UAE_SUBJECT, TEMPLATE_UAE
+    return get_variant('TEMPLATE_GLOBAL', TEMPLATE_UAE_SUBJECT, TEMPLATE_UAE)
 
 def render_template(template: str, lead: dict) -> str:
     """
@@ -201,7 +234,9 @@ def render_template(template: str, lead: dict) -> str:
     variables = {
         'salutation':        salutation,
         'first_name':        first_name or 'there',
+        'name':              first_name or 'there',
         'company_name':      company_name,
+        'company':           company_name,
         'tender_description': tender_desc or 'your current projects',
         'country':           country,
     }

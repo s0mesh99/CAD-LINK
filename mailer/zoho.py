@@ -11,34 +11,35 @@ ZOHO_SMTP_PORT = 465
 def plain_to_html(plain_text: str) -> str:
     """
     Convert plain text email to minimal clean HTML.
-    Preserves line breaks and bullet points.
-    No heavy newsletter styling — looks like a real person wrote it.
+    If the text already contains HTML tags like <p>, it preserves them.
     """
-    lines = plain_text.strip().split('\n')
-    html_lines = []
-
-    for line in lines:
-        line = line.strip()
-        if not line:
-            html_lines.append('<br>')
-        elif line.startswith('•'):
-            html_lines.append(
-                f'<p style="margin:2px 0 2px 16px;">{line}</p>'
-            )
-        else:
-            html_lines.append(f'<p style="margin:4px 0;">{line}</p>')
-
     logo_html = '''
     <br><br>
     <a href="https://cadlink.in" style="text-decoration:none;">
         <img src="https://cad-link.web.app/logo.png" alt="CAD LINK" width="140" style="display:block; margin-top:10px;">
     </a>
     '''
+    
+    # If the body is already HTML (from Supabase V1.2 templates)
+    if '<p>' in plain_text or '<br>' in plain_text:
+        html_content = plain_text
+    else:
+        lines = plain_text.strip().split('\n')
+        html_lines = []
+        for line in lines:
+            line = line.strip()
+            if not line:
+                html_lines.append('<br>')
+            elif line.startswith('•'):
+                html_lines.append(f'<p style="margin:2px 0 2px 16px;">{line}</p>')
+            else:
+                html_lines.append(f'<p style="margin:4px 0;">{line}</p>')
+        html_content = ''.join(html_lines)
 
     return f"""
     <html><body style="font-family:Arial,sans-serif;font-size:14px;
     color:#1C2833;max-width:560px;margin:0 auto;padding:20px;">
-    {''.join(html_lines)}
+    {html_content}
     {logo_html}
     </body></html>
     """
@@ -92,7 +93,7 @@ def send_campaign(phase: int = 1, limit: int = 20,
 
         # Select and render template
         try:
-            subject, body_template = select_template(lead)
+            subject, body_template, t_name = select_template(lead)
             body = render_template(body_template, lead)
             subject_rendered = render_template(subject, lead)
         except ValueError as e:
@@ -132,7 +133,7 @@ def send_campaign(phase: int = 1, limit: int = 20,
                               msg.as_string())
 
             # Log to email_tracking
-            db.log_email_sent(lead['id'], recipient, lead.get('contact_name', ''), subject_rendered, phase)
+            db.log_email_sent(lead['id'], recipient, lead.get('contact_name', ''), subject_rendered, phase, template_name=t_name)
 
             sent += 1
             logging.info(
@@ -174,7 +175,7 @@ def send_follow_ups(dry_run: bool = False):
         if not recipient:
             continue
 
-        subject, body_template = select_template(
+        subject, body_template, _ = select_template(
             lead, is_followup=True
         )
         body = render_template(body_template, lead)

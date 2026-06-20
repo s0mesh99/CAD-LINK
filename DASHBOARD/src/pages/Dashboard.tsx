@@ -59,8 +59,8 @@ export function DashboardOverview() {
     const { data: leadsData } = await supabase.from('companies').select('*').order('created_at', { ascending: false }).limit(5000);
     setLeads(leadsData || []);
 
-    // Emails
-    const { data: emailsData } = await supabase.from('email_tracking').select(`*, companies ( name, domain )`).order('sent_at', { ascending: false }).limit(100);
+    // Emails (increased limit for A/B testing analytics)
+    const { data: emailsData } = await supabase.from('email_tracking').select(`*, companies ( name, domain )`).order('sent_at', { ascending: false }).limit(5000);
     setEmails(emailsData || []);
 
     setLoading(false);
@@ -174,16 +174,83 @@ export function DashboardOverview() {
       .sort((a, b) => b.count - a.count);
   }, [leads]);
 
+  const abTestStats = useMemo(() => {
+    const stats: Record<string, { name: string; sends: number; opens: number; replies: number }> = {};
+    emails.forEach(e => {
+      const tName = e.template_name || 'Unknown Template';
+      if (!stats[tName]) {
+        stats[tName] = { name: tName, sends: 0, opens: 0, replies: 0 };
+      }
+      stats[tName].sends += 1;
+      if (e.open_count > 0) stats[tName].opens += 1;
+      if (e.replied === 1) stats[tName].replies += 1;
+    });
+    return Object.values(stats)
+      .map(s => ({
+        ...s,
+        openRate: s.sends > 0 ? ((s.opens / s.sends) * 100).toFixed(1) : '0.0',
+        replyRate: s.sends > 0 ? ((s.replies / s.sends) * 100).toFixed(1) : '0.0',
+      }))
+      .sort((a, b) => b.sends - a.sends);
+  }, [emails]);
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       
       {/* 1. KPI CARDS ROW */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-6 mb-6">
         <StatCard title="Total Leads" value={stats.totalLeads} valueColor="text-blue-600" />
         <StatCard title="Premium Leads" value={stats.premiumLeads} valueColor="text-[#0F766E]" />
         <StatCard title="Enriched Emails" value={stats.enrichedEmails} valueColor="text-green-600" />
         <StatCard title="Emails Sent" value={stats.totalEmails} valueColor="text-indigo-600" />
         <StatCard title="Bounced Emails" value={stats.bouncedEmails} valueColor="text-red-600" />
+      </div>
+
+      <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">Quality vs Quantity Analytics</h3>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <StatCard 
+          title="Data Center Leads" 
+          value={leads.filter(l => l.sector?.toLowerCase().includes('data center') || l.sub_sector?.toLowerCase().includes('data center') || (l.name && l.name.toLowerCase().includes('data center'))).length} 
+          valueColor="text-emerald-600" 
+        />
+        <StatCard 
+          title="Renewable Energy Leads" 
+          value={leads.filter(l => l.sector?.toLowerCase().includes('renew') || l.sector?.toLowerCase().includes('solar') || l.sector?.toLowerCase().includes('wind') || (l.name && (l.name.toLowerCase().includes('solar') || l.name.toLowerCase().includes('wind')))).length} 
+          valueColor="text-emerald-600" 
+        />
+        <StatCard 
+          title="Oil & Gas Leads" 
+          value={leads.filter(l => l.sector?.toLowerCase().includes('oil') || l.sector?.toLowerCase().includes('gas') || (l.name && l.name.toLowerCase().includes('oil'))).length} 
+          valueColor="text-slate-600" 
+        />
+      </div>
+
+      <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">A/B Testing & Email Performance</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        {abTestStats.length > 0 ? abTestStats.map(stat => (
+          <div key={stat.name} className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-2 h-full bg-indigo-500/20 group-hover:bg-indigo-500/40 transition-colors"></div>
+            <h4 className="text-slate-800 font-bold mb-3 truncate pr-4" title={stat.name}>{stat.name}</h4>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="flex flex-col">
+                <span className="text-xs text-slate-400 font-medium uppercase tracking-wider">Sends</span>
+                <span className="text-lg font-semibold text-slate-700">{stat.sends}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs text-slate-400 font-medium uppercase tracking-wider">Open Rate</span>
+                <span className="text-lg font-semibold text-blue-600">{stat.openRate}%</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs text-slate-400 font-medium uppercase tracking-wider">Reply Rate</span>
+                <span className="text-lg font-semibold text-emerald-600">{stat.replyRate}%</span>
+              </div>
+            </div>
+          </div>
+        )) : (
+          <div className="col-span-full p-6 text-center text-slate-500 bg-white border border-dashed border-slate-300 rounded-xl">
+            No email tracking data yet. Send an email campaign to see A/B testing analytics!
+          </div>
+        )}
       </div>
 
       <div className="space-y-8">

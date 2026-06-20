@@ -264,7 +264,7 @@ class DatabaseClient:
             print(f"[DB] get_due_follow_ups error: {e}")
             return []
 
-    def log_email_sent(self, company_id, recipient_email, recipient_name, subject, phase):
+    def log_email_sent(self, company_id, recipient_email, recipient_name, subject, phase, template_name=None):
         if not self.supabase: return
         from datetime import datetime, timedelta
         follow_up_due = (datetime.now() + timedelta(days=7)).isoformat()
@@ -281,6 +281,9 @@ class DatabaseClient:
             'follow_up_sent': 0,
             'bounced': 0
         }
+        if template_name:
+            data['template_name'] = template_name
+            
         try:
             self.supabase.table('email_tracking').insert(data).execute()
         except Exception as e:
