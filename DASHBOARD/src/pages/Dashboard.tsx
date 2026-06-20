@@ -35,33 +35,28 @@ export function DashboardOverview() {
   async function fetchAllData() {
     setLoading(true);
     
-    // KPI Stats
-    const { count: totalLeads } = await supabase.from('companies').select('*', { count: 'exact', head: true });
-    const { count: premiumLeads } = await supabase.from('companies').select('*', { count: 'exact', head: true }).gte('quality_score', 3);
-    const { count: totalEmails } = await supabase.from('email_tracking').select('*', { count: 'exact', head: true });
-    const { count: bouncedEmails } = await supabase.from('email_tracking').select('*', { count: 'exact', head: true }).eq('bounced', 1);
-    const { count: enrichedEmails1 } = await supabase.from('companies').select('*', { count: 'exact', head: true }).not('email_1', 'is', null);
-    const { count: enrichedEmails2 } = await supabase.from('companies').select('*', { count: 'exact', head: true }).not('contact_email', 'is', null);
-    
-    setStats({
-      totalLeads: totalLeads || 0,
-      premiumLeads: premiumLeads || 0,
-      totalEmails: totalEmails || 0,
-      bouncedEmails: bouncedEmails || 0,
-      enrichedEmails: (enrichedEmails1 || 0) + (enrichedEmails2 || 0)
-    });
-
     // Scrapers
     const { data: runsData } = await supabase.from('scraper_runs').select('*').order('started_at', { ascending: false }).limit(5);
     setRuns(runsData || []);
 
     // Leads (increased limit)
     const { data: leadsData } = await supabase.from('companies').select('*').order('created_at', { ascending: false }).limit(5000);
-    setLeads(leadsData || []);
+    const leadsArr = leadsData || [];
+    setLeads(leadsArr);
 
     // Emails (increased limit for A/B testing analytics)
     const { data: emailsData } = await supabase.from('email_tracking').select(`*, companies ( name, domain )`).order('sent_at', { ascending: false }).limit(5000);
-    setEmails(emailsData || []);
+    const emailsArr = emailsData || [];
+    setEmails(emailsArr);
+
+    // KPI Stats (Calculated directly from loaded data to ensure perfect matching with the UI tables)
+    setStats({
+      totalLeads: leadsArr.length,
+      premiumLeads: leadsArr.filter(l => l.quality_score >= 3).length,
+      totalEmails: emailsArr.length,
+      bouncedEmails: emailsArr.filter(e => e.bounced === 1 || e.bounced === true).length,
+      enrichedEmails: leadsArr.filter(l => !!l.email_1 || !!l.contact_email || !!l.email).length
+    });
 
     setLoading(false);
   }
