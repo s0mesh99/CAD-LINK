@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '../supabaseClient';
 import { 
   Bot, Play, CheckCircle2, XCircle, 
-  BarChart3, Info
+  BarChart3
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { formatDistanceToNow } from 'date-fns';
