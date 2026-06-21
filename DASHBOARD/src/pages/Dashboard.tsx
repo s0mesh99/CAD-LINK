@@ -28,19 +28,22 @@ export function DashboardOverview() {
     const { data: runsData } = await supabase.from('scraper_runs').select('*').order('started_at', { ascending: false }).limit(5);
     setRuns(runsData || []);
 
-    // Leads (increased limit)
+    // Get exact total counts without downloading thousands of rows
+    const { count: exactLeadCount } = await supabase.from('companies').select('*', { count: 'exact', head: true });
+    
+    // Leads (Download a limited chunk for the client-side UI analytics)
     const { data: leadsData } = await supabase.from('companies').select('*').order('created_at', { ascending: false }).limit(5000);
     const leadsArr = leadsData || [];
     setLeads(leadsArr);
 
-    // Emails (increased limit for A/B testing analytics)
-    const { data: emailsData } = await supabase.from('email_tracking').select(`*, companies ( name, domain )`).order('sent_at', { ascending: false }).limit(5000);
+    // Emails (Download a limited chunk for the A/B testing analytics)
+    const { data: emailsData } = await supabase.from('email_tracking').select(`*, companies ( name, domain )`).order('sent_at', { ascending: false }).limit(2000);
     const emailsArr = emailsData || [];
     setEmails(emailsArr);
 
     // KPI Stats (Calculated directly from loaded data to ensure perfect matching with the UI tables)
     setStats({
-      totalLeads: leadsArr.length,
+      totalLeads: exactLeadCount || leadsArr.length,
       premiumLeads: leadsArr.filter(l => l.quality_score >= 3).length,
       totalEmails: emailsArr.length,
       bouncedEmails: emailsArr.filter(e => e.bounced === 1 || e.bounced === true).length,
