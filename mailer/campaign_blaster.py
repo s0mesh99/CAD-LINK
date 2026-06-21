@@ -15,7 +15,9 @@ SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 ZOHO_EMAIL = os.environ.get("ZOHO_EMAIL")
 ZOHO_PASSWORD = os.environ.get("ZOHO_APP_PASSWORD")
 
-DAILY_LIMIT = 50
+# Protect the main domain: Send very small batches to avoid spam filters
+# Since the Action runs 6 times a day, 4 per batch = 24 emails per day.
+BATCH_LIMIT = 4
 
 def run_campaign():
     print("[Campaign Blaster] Starting Automated Campaign Blaster...")
@@ -79,7 +81,7 @@ def run_campaign():
         lead['_target_email'] = best_email
         target_leads.append(lead)
         
-        if len(target_leads) >= DAILY_LIMIT:
+        if len(target_leads) >= BATCH_LIMIT:
             break
             
     print(f"[*] Found {len(target_leads)} new Premium Leads ready for outreach.")
