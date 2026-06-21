@@ -13,11 +13,16 @@ def plain_to_html(plain_text: str) -> str:
     Convert plain text email to minimal clean HTML.
     If the text already contains HTML tags like <p>, it preserves them.
     """
-    logo_html = '''
+    footer_html = '''
     <br><br>
     <a href="https://cadlink.in" style="text-decoration:none;">
-        <img src="https://cad-link.web.app/logo.png" alt="CAD LINK" width="140" style="display:block; margin-top:10px;">
+        <img src="https://cad-link.web.app/logo.png" alt="CAD LINK" width="140" style="display:block; margin-bottom:15px;">
     </a>
+    <div style="margin-top: 15px; font-family: Arial, sans-serif;">
+        <a href="https://www.cadlink.in/" style="display:inline-block; padding:8px 15px; margin-right:8px; background-color:#0F766E; color:#ffffff; text-decoration:none; border-radius:5px; font-size:13px; font-weight:bold;">Visit Website</a>
+        <a href="https://www.linkedin.com/company/cad-link-engg/" style="display:inline-block; padding:8px 15px; margin-right:8px; background-color:#0077b5; color:#ffffff; text-decoration:none; border-radius:5px; font-size:13px; font-weight:bold;">LinkedIn</a>
+        <a href="mailto:somesh.nammina@cadlink.in" style="display:inline-block; padding:8px 15px; background-color:#333333; color:#ffffff; text-decoration:none; border-radius:5px; font-size:13px; font-weight:bold;">Email Me</a>
+    </div>
     '''
     
     # If the body is already HTML (from Supabase V1.2 templates)
@@ -40,7 +45,7 @@ def plain_to_html(plain_text: str) -> str:
     <html><body style="font-family:Arial,sans-serif;font-size:14px;
     color:#1C2833;max-width:560px;margin:0 auto;padding:20px;">
     {html_content}
-    {logo_html}
+    {footer_html}
     </body></html>
     """
 
