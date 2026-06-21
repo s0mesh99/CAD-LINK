@@ -45,9 +45,13 @@ class DomainClusterScraper(BaseScraper):
         self.log.info("Starting domain clustering...")
         
         # Get 10 recent domains to cluster
-        rows = self.conn.execute(
-            "SELECT id, domain FROM companies WHERE domain != '' ORDER BY id DESC LIMIT 10"
-        ).fetchall()
+        rows = []
+        if hasattr(self, 'db') and getattr(self.db, 'supabase', None):
+            try:
+                res = self.db.supabase.table('companies').select('id, domain').neq('domain', '').order('id', desc=True).limit(10).execute()
+                rows = res.data
+            except Exception as e:
+                self.log.error(f"Error fetching domains from DB: {e}")
         
         for row in rows:
             domain = row['domain']

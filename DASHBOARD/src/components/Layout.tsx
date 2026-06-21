@@ -7,11 +7,11 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export type TabType = 'scrapers' | 'leads' | 'config' | 'templates';
+export type TabType = 'dashboard' | 'crm' | 'inbox' | 'leads' | 'scrapers' | 'templates';
 
 export function Layout({ 
   children, 
-  currentTab = 'scrapers', 
+  currentTab = 'dashboard', 
   setCurrentTab,
   onLogout
 }: { 
@@ -21,9 +21,9 @@ export function Layout({
   onLogout?: () => void
 }) {
   return (
-    <div className="min-h-screen mesh-bg text-slate-800 font-sans selection:bg-cadlink-600/20">
+    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-cadlink-600/20">
       {/* Top Navigation Bar */}
-      <header className="glass-panel border-b border-white/40 h-16 flex items-center justify-between px-6 sticky top-0 z-50 shadow-sm">
+      <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-6 sticky top-0 z-50 shadow-sm">
         <div className="flex items-center gap-8">
           <div className="flex items-center gap-3">
             <div className="text-2xl font-display font-extrabold tracking-tight">
@@ -31,21 +31,41 @@ export function Layout({
               <span className="text-cadlink-600">Link</span>
             </div>
             <div className="px-2 py-0.5 bg-cadlink-50 border border-cadlink-200 text-cadlink-700 text-[10px] font-bold rounded-full uppercase tracking-wider ml-1">
-              ADMIN V1.2
+              ADMIN V1.4
             </div>
           </div>
 
           {setCurrentTab && (
             <nav className="hidden md:flex items-center gap-2">
               <button 
-                onClick={() => setCurrentTab('scrapers')}
+                onClick={() => setCurrentTab('dashboard')}
                 className={cn(
                   "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all",
-                  currentTab === 'scrapers' ? "bg-white text-cadlink-700 shadow-sm border border-slate-200/50" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                  currentTab === 'dashboard' ? "bg-white text-cadlink-700 shadow-sm border border-slate-200/50" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
                 )}
               >
                 <Database className="w-4 h-4" />
-                Scrapers
+                Dashboard
+              </button>
+              <button 
+                onClick={() => setCurrentTab('crm')}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all",
+                  currentTab === 'crm' ? "bg-white text-cadlink-700 shadow-sm border border-slate-200/50" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                )}
+              >
+                <Users className="w-4 h-4" />
+                CRM (Outbound)
+              </button>
+              <button 
+                onClick={() => setCurrentTab('inbox')}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all",
+                  currentTab === 'inbox' ? "bg-white text-cadlink-700 shadow-sm border border-slate-200/50" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                )}
+              >
+                <Mail className="w-4 h-4" />
+                AI Inbox
               </button>
               <button 
                 onClick={() => setCurrentTab('leads')}
@@ -55,17 +75,17 @@ export function Layout({
                 )}
               >
                 <Users className="w-4 h-4" />
-                Leads
+                Inbound Leads
               </button>
               <button 
-                onClick={() => setCurrentTab('config')}
+                onClick={() => setCurrentTab('scrapers')}
                 className={cn(
                   "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all",
-                  currentTab === 'config' ? "bg-white text-cadlink-700 shadow-sm border border-slate-200/50" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                  currentTab === 'scrapers' ? "bg-white text-cadlink-700 shadow-sm border border-slate-200/50" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
                 )}
               >
                 <Settings className="w-4 h-4" />
-                Config
+                Scrapers
               </button>
               <button 
                 onClick={() => setCurrentTab('templates')}

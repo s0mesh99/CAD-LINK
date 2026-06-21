@@ -207,7 +207,7 @@ def render_template(template: str, lead: dict) -> str:
     """
 
     # Salutation — named person or clean fallback
-    contact_name  = lead.get('contact_name', '').strip()
+    contact_name  = (lead.get('contact_name') or '').strip()
     first_name    = contact_name.split()[0] if contact_name else ''
 
     # Never use "Hi team" — if no name, use plain "Hi,"
@@ -217,7 +217,7 @@ def render_template(template: str, lead: dict) -> str:
         salutation = "Hi,"
 
     # Company name — clean fallback
-    company_name = lead.get('name', '').strip()
+    company_name = (lead.get('name') or '').strip()
     if not company_name or 'test' in company_name.lower():
         raise ValueError(
             f"Invalid company name '{company_name}' — skipping lead"

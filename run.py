@@ -168,6 +168,8 @@ if __name__ == '__main__':
     parser.add_argument('--dry-run', action='store_true', help="Print emails to console instead of sending")
     parser.add_argument('--status', action='store_true', help="Show database statistics")
     
+    parser.add_argument('--run-blaster', action='store_true', help="Run the V1.5 automated campaign blaster (50 emails/day)")
+    
     args = parser.parse_args()
     
     if args.run_scrapers:
@@ -175,6 +177,10 @@ if __name__ == '__main__':
         
     if args.run_enrichment:
         enrich_leads(limit=100)
+        
+    if args.run_blaster:
+        from mailer.campaign_blaster import run_campaign
+        run_campaign()
         
     if args.send_emails:
         from db.client import DatabaseClient

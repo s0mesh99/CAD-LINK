@@ -340,3 +340,43 @@ class DatabaseClient:
         except Exception as e:
             return {"error": str(e)}
 
+    def find_company_by_email(self, email: str) -> dict:
+        """Find a company by contact_email, email_1, email_2, or email."""
+        if not self.supabase: return None
+        try:
+            # We must use simple queries because 'or' syntax can be tricky in Python client
+            # Let's search 'email_tracking' first since we know outreach went there
+            res = self.supabase.table('email_tracking').select('company_id').eq('recipient_email', email).limit(1).execute()
+            if res.data:
+                comp_id = res.data[0]['company_id']
+                comp_res = self.supabase.table('companies').select('id, name').eq('id', comp_id).execute()
+                if comp_res.data:
+                    return comp_res.data[0]
+            
+            # Fallback: search companies table
+            comp_res = self.supabase.table('companies').select('id, name').or_(f"contact_email.eq.{email},email_1.eq.{email},email_2.eq.{email},email.eq.{email}").limit(1).execute()
+            if comp_res.data:
+                return comp_res.data[0]
+            
+            return None
+        except Exception as e:
+            print(f"[DB] find_company_by_email error for {email}: {e}")
+            return None
+
+    def mark_email_replied(self, company_id: str):
+        """Mark all tracking entries for a company as replied."""
+        if not self.supabase: return
+        try:
+            self.supabase.table('email_tracking').update({'replied': 1}).eq('company_id', company_id).execute()
+        except Exception as e:
+            print(f"[DB] mark_email_replied error: {e}")
+
+    def update_company_pipeline(self, company_id: str, stage: str):
+        """Update the pipeline stage for a company."""
+        if not self.supabase: return
+        try:
+            # Re-using the 'status' or 'pipeline_stage' if it exists. 
+            # In V1.3 CRMBoard uses `pipeline_stage`.
+            self.supabase.table('companies').update({'pipeline_stage': stage}).eq('id', company_id).execute()
+        except Exception as e:
+            print(f"[DB] update_company_pipeline error: {e}")

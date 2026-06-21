@@ -34,16 +34,32 @@ class IndustryRSSScraper(BaseScraper):
     def __init__(self):
         super().__init__('industry_rss', min_delay=1.0, max_delay=3.0)
 
+    def _load_seen(self):
+        import json, os
+        self.seen_file = 'rss_seen.json'
+        if not os.path.exists(self.seen_file):
+            return set()
+        with open(self.seen_file, 'r') as f:
+            try:
+                return set(json.load(f))
+            except:
+                return set()
+
+    def _save_seen(self, seen_set):
+        import json
+        with open(self.seen_file, 'w') as f:
+            json.dump(list(seen_set), f)
+
     def is_seen(self, entry_id: str) -> bool:
-        row = self.conn.execute("SELECT id FROM rss_seen WHERE entry_id = ?", (entry_id,)).fetchone()
-        return row is not None
+        if not hasattr(self, '_seen_cache'):
+            self._seen_cache = self._load_seen()
+        return entry_id in self._seen_cache
 
     def mark_seen(self, feed_url: str, entry_id: str):
-        try:
-            self.conn.execute("INSERT INTO rss_seen (feed_url, entry_id) VALUES (?, ?)", (feed_url, entry_id))
-            self.conn.commit()
-        except:
-            pass
+        if not hasattr(self, '_seen_cache'):
+            self._seen_cache = self._load_seen()
+        self._seen_cache.add(entry_id)
+        self._save_seen(self._seen_cache)
 
     def parse_rss_for_leads(self, feed_url: str):
         try:

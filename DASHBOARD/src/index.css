@@ -27,36 +27,25 @@ body {
   color: #0f172a;
 }
 
-/* Glassmorphism utility classes */
+/* Clean Enterprise utility classes */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
 .glass-card {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .glass-card-dark {
-  background: rgba(15, 23, 42, 0.6);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .mesh-bg {
   background-color: #f8fafc;
-  background-image: 
-    radial-gradient(at 0% 0%, hsla(164,60%,92%,1) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, hsla(190,50%,92%,1) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, hsla(164,60%,92%,1) 0px, transparent 50%),
-    radial-gradient(at 0% 100%, hsla(190,50%,92%,1) 0px, transparent 50%);
-  background-attachment: fixed;
 }

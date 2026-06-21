@@ -41,7 +41,17 @@ class BaseScraper:
         Insert or ignore company. Returns 1 if inserted, 0 if skipped.
         """
         domain = self.clean_domain(data.get('domain', ''))
-        if not domain or self.domain_exists(domain):
+        
+        if not domain:
+            # Generate a pseudo-domain for OSINT leads so it doesn't fail the DB constraint
+            import re
+            name_slug = re.sub(r'[^a-z0-9]', '', data.get('name', '').lower())
+            if not name_slug:
+                self.skipped += 1
+                return 0
+            domain = f"{name_slug}.osint"
+
+        if self.domain_exists(domain):
             self.skipped += 1
             return 0
 

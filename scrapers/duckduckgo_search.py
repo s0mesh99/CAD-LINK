@@ -161,19 +161,41 @@ class DuckDuckGoScraper(BaseScraper):
             'snippet':             snippet,
         }
 
+    def _load_cache(self):
+        import json, os
+        if not os.path.exists('pdf_cache.json'):
+            return {}
+        with open('pdf_cache.json', 'r') as f:
+            try:
+                return json.load(f)
+            except:
+                return {}
+
+    def _save_cache(self, cache):
+        import json
+        with open('pdf_cache.json', 'w') as f:
+            json.dump(cache, f)
+
     def process_pdf_result(self, result: dict) -> dict:
         """
         Queue PDF URL for the PDF miner to process.
-        Store in pdf_cache table.
+        Store in pdf_cache.json.
         """
         url = result['url']
         if not url.lower().endswith('.pdf'):
             return {}
-        self.conn.execute(
-            'INSERT OR IGNORE INTO pdf_cache (pdf_url, downloaded_at) '
-            'VALUES (?, CURRENT_TIMESTAMP)', (url,)
-        )
-        self.conn.commit()
+        
+        cache = self._load_cache()
+        if url not in cache:
+            import datetime
+            cache[url] = {
+                'pdf_url': url,
+                'downloaded_at': datetime.datetime.now().isoformat(),
+                'parsed': False,
+                'leads_found': 0
+            }
+            self._save_cache(cache)
+            
         return {'queued_pdf': url}
 
     def run_company_queries(self):
@@ -242,34 +264,28 @@ class DuckDuckGoScraper(BaseScraper):
             if not company_name:
                 continue
 
-            # Fuzzy match company name in DB
-            rows = self.conn.execute(
-                'SELECT id, domain FROM companies '
-                'WHERE name LIKE ? LIMIT 1',
-                (f'%{company_name}%',)
-            ).fetchall()
-
-            if rows:
-                # Update existing company with contact info
-                self.conn.execute('''
-                    UPDATE companies SET
-                        contact_name = COALESCE(contact_name, ?),
-                        contact_title = COALESCE(contact_title, ?),
-                        contact_linkedin_url = COALESCE(contact_linkedin_url, ?)
-                    WHERE id = ?
-                ''', (p['contact_name'], p['contact_title'],
-                      p['contact_linkedin_url'], rows[0]['id']))
-                self.conn.commit()
-            else:
-                # Create stub — enrich later
-                self.insert_company({
-                    'name':                p['company_name'],
-                    'domain':              '',
-                    'contact_name':        p['contact_name'],
-                    'contact_title':       p['contact_title'],
-                    'contact_linkedin_url': p['contact_linkedin_url'],
-                    'source_method':       'linkedin_person_dork',
-                })
+            # Fuzzy match company name in DB (using ilike for case-insensitive match)
+            if hasattr(self, 'db') and getattr(self.db, 'supabase', None):
+                res = self.db.supabase.table('companies').select('id, domain').ilike('name', f'%{company_name}%').limit(1).execute()
+                rows = res.data
+                
+                if rows:
+                    # Update existing company with contact info
+                    self.db.update_company(rows[0]['domain'], {
+                        'contact_name': p['contact_name'],
+                        'contact_title': p['contact_title'],
+                        'contact_linkedin_url': p['contact_linkedin_url']
+                    })
+                else:
+                    # Create stub — enrich later
+                    self.insert_company({
+                        'name':                p['company_name'],
+                        'domain':              '',
+                        'contact_name':        p['contact_name'],
+                        'contact_title':       p['contact_title'],
+                        'contact_linkedin_url': p['contact_linkedin_url'],
+                        'source_method':       'linkedin_person_dork',
+                    })
 
     def _extract_companies_from_award(self, result: dict) -> list:
         """

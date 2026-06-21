@@ -63,28 +63,44 @@ class PDFMinerScraper(BaseScraper):
             self.log.error(f"Error parsing PDF {pdf_url}: {e}")
             return {}
 
+    def _load_cache(self):
+        import json, os
+        if not os.path.exists('pdf_cache.json'):
+            return {}
+        with open('pdf_cache.json', 'r') as f:
+            try:
+                return json.load(f)
+            except:
+                return {}
+
+    def _save_cache(self, cache):
+        import json
+        with open('pdf_cache.json', 'w') as f:
+            json.dump(cache, f)
+
     def run(self):
-        # Fetch unparsed PDFs from cache
-        rows = self.conn.execute("SELECT id, pdf_url FROM pdf_cache WHERE parsed = 0 LIMIT 20").fetchall()
-        for row in rows:
-            pdf_id = row['id']
-            url = row['pdf_url']
-            
+        cache = self._load_cache()
+        
+        # Find unparsed PDFs
+        unparsed = [(url, data) for url, data in cache.items() if not data.get('parsed')]
+        
+        # Limit to 20 per run
+        for url, data in unparsed[:20]:
             self.log.info(f"Mining PDF: {url}")
-            data = self.extract_from_pdf(url)
+            extracted = self.extract_from_pdf(url)
             
             leads_found = 0
-            if data and (data['emails'] or data['phones']):
-                domain = self.clean_domain(data['websites'][0]) if data['websites'] else ''
-                if not domain and data['emails']:
-                    domain = data['emails'][0].split('@')[1]
+            if extracted and (extracted['emails'] or extracted['phones']):
+                domain = self.clean_domain(extracted['websites'][0]) if extracted['websites'] else ''
+                if not domain and extracted['emails']:
+                    domain = extracted['emails'][0].split('@')[1]
                 
                 record = {
-                    'name': data['company_name'] or domain.split('.')[0].capitalize(),
+                    'name': extracted['company_name'] or domain.split('.')[0].capitalize(),
                     'domain': domain,
-                    'email': data['emails'][0] if data['emails'] else '',
-                    'phone': data['phones'][0] if data['phones'] else '',
-                    'raw_text_snippet': data['raw_text_snippet'],
+                    'email': extracted['emails'][0] if extracted['emails'] else '',
+                    'phone': extracted['phones'][0] if extracted['phones'] else '',
+                    'raw_text_snippet': extracted['raw_text_snippet'],
                     'source_method': 'pdf_miner',
                     'source_url': url,
                     'sector': 'epc'
@@ -93,7 +109,9 @@ class PDFMinerScraper(BaseScraper):
                 if self.insert_company(record):
                     leads_found = 1
             
-            self.conn.execute("UPDATE pdf_cache SET parsed = 1, leads_found = ? WHERE id = ?", (leads_found, pdf_id))
-            self.conn.commit()
+            # Update cache
+            cache[url]['parsed'] = True
+            cache[url]['leads_found'] = leads_found
+            self._save_cache(cache)
             
         self.log_run("ok")
