@@ -28,26 +28,31 @@ export function DashboardOverview() {
     const { data: runsData } = await supabase.from('scraper_runs').select('*').order('started_at', { ascending: false }).limit(5);
     setRuns(runsData || []);
 
-    // Get exact total counts without downloading thousands of rows
-    const { count: exactLeadCount } = await supabase.from('companies').select('*', { count: 'exact', head: true });
-    
-    // Leads (Download a limited chunk for the client-side UI analytics)
-    const { data: leadsData } = await supabase.from('companies').select('*').order('created_at', { ascending: false }).limit(5000);
-    const leadsArr = leadsData || [];
-    setLeads(leadsArr);
+    // Leads (Bypass Supabase 1000-row API limit using pagination)
+    let allLeads: any[] = [];
+    let from = 0;
+    const step = 1000;
+    while(true) {
+      const { data } = await supabase.from('companies').select('*').order('created_at', { ascending: false }).range(from, from + step - 1);
+      if (!data || data.length === 0) break;
+      allLeads = [...allLeads, ...data];
+      if (data.length < step) break; // Reached the end
+      from += step;
+    }
+    setLeads(allLeads);
 
-    // Emails (Download a limited chunk for the A/B testing analytics)
+    // Emails (Download a chunk for A/B testing analytics)
     const { data: emailsData } = await supabase.from('email_tracking').select(`*, companies ( name, domain )`).order('sent_at', { ascending: false }).limit(2000);
     const emailsArr = emailsData || [];
     setEmails(emailsArr);
 
     // KPI Stats (Calculated directly from loaded data to ensure perfect matching with the UI tables)
     setStats({
-      totalLeads: exactLeadCount || leadsArr.length,
-      premiumLeads: leadsArr.filter(l => l.quality_score >= 3).length,
+      totalLeads: allLeads.length,
+      premiumLeads: allLeads.filter(l => l.quality_score >= 3).length,
       totalEmails: emailsArr.length,
       bouncedEmails: emailsArr.filter(e => e.bounced === 1 || e.bounced === true).length,
-      enrichedEmails: leadsArr.filter(l => !!l.email_1 || !!l.contact_email || !!l.email).length
+      enrichedEmails: allLeads.filter(l => !!l.email_1 || !!l.contact_email || !!l.email).length
     });
   }
 
