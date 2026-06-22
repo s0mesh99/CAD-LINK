@@ -37,7 +37,7 @@ export function InboxManager() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
             <Bot className="w-8 h-8 text-[#0F766E]" />
@@ -45,7 +45,7 @@ export function InboxManager() {
           </h1>
           <p className="text-slate-500 mt-1">Review AI-triaged email replies and summaries automatically synced from Zoho.</p>
         </div>
-        <div className="bg-white border border-slate-200 shadow-sm px-4 py-2 rounded-xl text-sm font-bold text-slate-700 flex items-center gap-2">
+        <div className="bg-white border border-slate-200 shadow-sm px-4 py-2 rounded-xl text-sm font-bold text-slate-700 flex items-center gap-2 w-fit">
           <MessageSquare className="w-4 h-4 text-[#0F766E]" />
           {replies.length} Replies Found
         </div>

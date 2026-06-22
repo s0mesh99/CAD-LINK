@@ -294,7 +294,7 @@ function StatTab({ title, value, valueColor, tooltip }: { title: string, value: 
   return (
     <motion.div 
       whileHover={{ y: -1 }}
-      className="bg-white border border-slate-200 rounded-lg px-4 py-2 shadow-sm flex items-center gap-3 relative group cursor-default"
+      className="w-full sm:w-auto sm:flex-1 bg-white border border-slate-200 rounded-lg px-4 py-2 shadow-sm flex items-center gap-3 relative group cursor-default"
     >
       <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">{title}</div>
       <div className={`text-lg font-bold ${valueColor}`}>

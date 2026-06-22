@@ -57,12 +57,12 @@ export function LeadsOverview() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-display font-bold text-slate-900">Inbound Leads</h1>
           <p className="text-sm text-slate-500 mt-1 font-medium">Manage leads generated from your portfolio website.</p>
         </div>
-        <div className="bg-cadlink-50 text-cadlink-700 px-4 py-2 rounded-xl text-sm font-bold border border-cadlink-200 shadow-sm">
+        <div className="bg-cadlink-50 text-cadlink-700 px-4 py-2 rounded-xl text-sm font-bold border border-cadlink-200 shadow-sm w-fit">
           {leads.length} Total Leads
         </div>
       </div>
