@@ -66,7 +66,7 @@ export function DashboardOverview() {
     setTriggering(true);
     setTriggerResult(null);
     try {
-      const response = await fetch('https://api.github.com/repos/s0mesh99/CAD-LINK/actions/workflows/scraper.yml/dispatches', {
+      const response = await fetch('https://api.github.com/repos/s0mesh99/CAD-LINK/actions/workflows/automation_engine.yml/dispatches', {
         method: 'POST',
         headers: { 'Accept': 'application/vnd.github.v3+json', 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ ref: 'main' })
