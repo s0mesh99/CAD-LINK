@@ -28,22 +28,26 @@ def run_campaign():
 
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-    # 1. Fetch previously contacted company IDs
-    print("[DB] Fetching tracking data to prevent duplicates...")
-    tracking_res = supabase.table('email_tracking').select('company_id').execute()
-    contacted_ids = set()
-    if tracking_res.data:
-        contacted_ids = {row['company_id'] for row in tracking_res.data}
-    
-    # 2. Fetch Premium Leads
-    print("[DB] Fetching Premium Leads (Score >= 3)...")
-    leads_res = supabase.table('companies').select('*').gte('quality_score', 3).order('quality_score', desc=True).execute()
-    
-    if not leads_res.data:
-        print("[-] No Premium Leads found in the database.")
-        return
+    try:
+        # 1. Fetch previously contacted company IDs
+        print("[DB] Fetching tracking data to prevent duplicates...")
+        tracking_res = supabase.table('email_tracking').select('company_id').execute()
+        contacted_ids = set()
+        if tracking_res.data:
+            contacted_ids = {row['company_id'] for row in tracking_res.data}
         
-    leads = leads_res.data
+        # 2. Fetch Premium Leads
+        print("[DB] Fetching Premium Leads (Score >= 3)...")
+        leads_res = supabase.table('companies').select('*').gte('quality_score', 3).order('quality_score', desc=True).execute()
+        
+        if not leads_res.data:
+            print("[-] No Premium Leads found in the database.")
+            return
+            
+        leads = leads_res.data
+    except Exception as e:
+        print(f"[X] Database error while fetching leads: {e}")
+        return
     
     # 3. Filter Leads
     target_leads = []
