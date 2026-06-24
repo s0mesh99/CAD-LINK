@@ -1,32 +1,29 @@
 import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '../supabaseClient';
 import { 
-  Bot, Play, CheckCircle2, XCircle, 
-  BarChart3
+  CheckCircle2, XCircle
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { formatDistanceToNow } from 'date-fns';
 
 export function DashboardOverview() {
-  const [stats, setStats] = useState({ totalLeads: 0, premiumLeads: 0, totalEmails: 0, bouncedEmails: 0, enrichedEmails: 0 });
-  const [runs, setRuns] = useState<any[]>([]);
+  const [stats, setStats] = useState({ 
+    totalLeads: 0, premiumLeads: 0, totalEmails: 0, bouncedEmails: 0, enrichedEmails: 0,
+    pendingLeads: 0, successfullyEnriched: 0, failedEnrichment: 0
+  });
   const [leads, setLeads] = useState<any[]>([]);
   const [emails, setEmails] = useState<any[]>([]);
 
   const [loading, setLoading] = useState(true);
 
-  // Scraper Trigger State
-  const [triggering, setTriggering] = useState(false);
-  const [triggerResult, setTriggerResult] = useState<{success: boolean, msg: string} | null>(null);
+
 
   useEffect(() => {
     fetchAllData().finally(() => setLoading(false));
   }, []);
 
   async function fetchAllData() {
-    // Scrapers
-    const { data: runsData } = await supabase.from('scraper_runs').select('*').order('started_at', { ascending: false }).limit(5);
-    setRuns(runsData || []);
+    // Scraper runs no longer needed on dashboard
 
     // Leads (Bypass Supabase 1000-row API limit using pagination)
     let allLeads: any[] = [];
@@ -55,60 +52,21 @@ export function DashboardOverview() {
     setEmails(emailsArr);
 
     // KPI Stats (Calculated directly from loaded data to ensure perfect matching with the UI tables)
+    // KPI Stats (Calculated directly from loaded data to ensure perfect matching with the UI tables)
     setStats({
       totalLeads: allLeads.length,
       premiumLeads: allLeads.filter(l => l.quality_score >= 3).length,
       totalEmails: emailsArr.length,
       bouncedEmails: emailsArr.filter(e => e.bounced === 1 || e.bounced === true).length,
-      enrichedEmails: allLeads.filter(l => !!l.email_1 || !!l.contact_email || !!l.email).length
+      enrichedEmails: allLeads.filter(l => !!l.email_1 || !!l.contact_email || !!l.email).length,
+      // Phase 5 Pipeline Metrics
+      pendingLeads: allLeads.filter(l => !l.status || l.status.toLowerCase() === 'new lead').length,
+      successfullyEnriched: allLeads.filter(l => l.status?.toLowerCase() === 'enriched').length,
+      failedEnrichment: allLeads.filter(l => l.status?.toLowerCase() === 'failed').length,
     });
   }
 
-  // --- SCRAPER ACTIONS ---
-  async function triggerGitHubAction() {
-    const token = import.meta.env.VITE_GITHUB_TOKEN;
-    if (!token) {
-      setTriggerResult({ success: false, msg: 'VITE_GITHUB_TOKEN is missing in your .env file.' });
-      return;
-    }
-    setTriggering(true);
-    setTriggerResult(null);
-    try {
-      const response = await fetch('https://api.github.com/repos/s0mesh99/CAD-LINK/actions/workflows/automation_engine.yml/dispatches', {
-        method: 'POST',
-        headers: { 'Accept': 'application/vnd.github.v3+json', 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ref: 'main' })
-      });
-      if (response.ok) {
-        setTriggerResult({ success: true, msg: 'Scraper triggered successfully!' });
-      } else {
-        const err = await response.json();
-        setTriggerResult({ success: false, msg: err.message || 'Failed to trigger scraper.' });
-      }
-    } catch (e: any) {
-      setTriggerResult({ success: false, msg: e.message });
-    }
-    setTriggering(false);
-  }
-
-  const scraperStats = useMemo(() => {
-    const stats: Record<string, { name: string; count: number; totalScore: number }> = {};
-    leads.forEach(l => {
-      const source = l.source_method || l.source || 'unknown';
-      if (!stats[source]) {
-        stats[source] = { name: source, count: 0, totalScore: 0 };
-      }
-      stats[source].count += 1;
-      stats[source].totalScore += (l.quality_score || 0);
-    });
-    
-    return Object.values(stats)
-      .map(s => ({
-        ...s,
-        avgScore: s.count > 0 ? (s.totalScore / s.count).toFixed(1) : 0
-      }))
-      .sort((a, b) => b.count - a.count);
-  }, [leads]);
+  // --- DEPRECATED SCRAPER ACTIONS REMOVED IN V1.5 ---
 
   const abTestStats = useMemo(() => {
     const stats: Record<string, { name: string; sends: number; opens: number; replies: number }> = {};
@@ -131,34 +89,48 @@ export function DashboardOverview() {
   }, [emails]);
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-10 animate-in fade-in duration-700">
       
-      {/* KPI Tabs (Compact) */}
-      <div className="flex flex-wrap items-center gap-3 mb-6">
-        <StatTab title="Total Leads" value={loading ? '...' : stats.totalLeads} valueColor="text-slate-800" tooltip="Total number of companies scraped." />
-        <StatTab title="Premium Leads" value={loading ? '...' : stats.premiumLeads} valueColor="text-[#0F766E]" tooltip="Leads with a Quality Score of 3 or higher." />
-        <StatTab title="Emails Verified" value={loading ? '...' : stats.enrichedEmails} valueColor="text-emerald-600" tooltip="Leads that have a valid email address." />
-        <StatTab title="Emails Sent" value={loading ? '...' : stats.totalEmails} valueColor="text-indigo-600" tooltip="Total number of outreach emails sent." />
-        <StatTab title="Bounced" value={loading ? '...' : stats.bouncedEmails} valueColor="text-red-500" tooltip="Emails that bounced or were rejected." />
+      {/* V1.5 Daily Progress Bar */}
+      <div className="bg-white/80 backdrop-blur-sm border border-slate-200/60 rounded-2xl p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-lg font-bold text-slate-800">Daily Automation Goal</h2>
+          <span className="text-sm font-semibold text-[#0F766E] bg-teal-50 px-3 py-1 rounded-full">
+            {stats.successfullyEnriched} / 20 Leads
+          </span>
+        </div>
+        <div className="w-full bg-slate-100 rounded-full h-3 mb-2 overflow-hidden">
+          <motion.div 
+            initial={{ width: 0 }}
+            animate={{ width: `${Math.min(100, (stats.successfullyEnriched / 20) * 100)}%` }}
+            transition={{ duration: 1, delay: 0.2 }}
+            className="bg-gradient-to-r from-teal-400 to-[#0F766E] h-3 rounded-full"
+          ></motion.div>
+        </div>
+        <p className="text-xs text-slate-500 font-medium">Deep AI Enrichment & Email Outreach daily quota (resets at 8:00 AM UTC)</p>
       </div>
 
-      <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">Quality vs Quantity Analytics</h3>
-      <div className="flex flex-wrap items-center gap-3 mb-8">
-        <StatTab 
-          title="Data Center Leads" 
-          value={leads.filter(l => l.sector?.toLowerCase().includes('data center') || l.sub_sector?.toLowerCase().includes('data center') || (l.name && l.name.toLowerCase().includes('data center'))).length} 
-          valueColor="text-emerald-600" 
-        />
-        <StatTab 
-          title="Renewable Energy Leads" 
-          value={leads.filter(l => l.sector?.toLowerCase().includes('renew') || l.sector?.toLowerCase().includes('solar') || l.sector?.toLowerCase().includes('wind') || (l.name && (l.name.toLowerCase().includes('solar') || l.name.toLowerCase().includes('wind')))).length} 
-          valueColor="text-emerald-600" 
-        />
-        <StatTab 
-          title="Oil & Gas Leads" 
-          value={leads.filter(l => l.sector?.toLowerCase().includes('oil') || l.sector?.toLowerCase().includes('gas') || (l.name && l.name.toLowerCase().includes('oil'))).length} 
-          valueColor="text-slate-600" 
-        />
+      {/* V1.5 Pipeline Metrics (Primary) */}
+      <div>
+        <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">AI Enrichment Pipeline</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <MetricCard title="Awaiting Deep AI" value={loading ? '...' : stats.pendingLeads} valueColor="text-slate-700" subtitle="Queued for tomorrow's run" tooltip="Leads currently marked as 'New Lead' waiting to be scraped." />
+          <MetricCard title="Successfully Enriched" value={loading ? '...' : stats.successfullyEnriched} valueColor="text-[#0F766E]" subtitle="Ready for Email Blaster" tooltip="Leads that have been successfully deep-researched by Gemini 2.5 Flash." />
+          <MetricCard title="AI Failure Rate" value={loading ? '...' : stats.totalLeads > 0 ? `${((stats.failedEnrichment / stats.totalLeads)*100).toFixed(1)}%` : '0%'} valueColor="text-red-500" subtitle={`${stats.failedEnrichment} dead websites`} tooltip="Percentage of websites that blocked Playwright or had no text." />
+          <MetricCard title="Total Dispatched" value={loading ? '...' : stats.totalEmails} valueColor="text-indigo-600" subtitle="Cold emails successfully sent" tooltip="The total amount of emails successfully delivered by the Campaign Blaster." />
+        </div>
+      </div>
+
+      {/* V1.5 Global Metrics (Secondary) */}
+      <div>
+        <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">Global CRM Database</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <MetricCard title="Total Leads" value={loading ? '...' : stats.totalLeads} valueColor="text-slate-800" />
+          <MetricCard title="Premium Leads" value={loading ? '...' : stats.premiumLeads} valueColor="text-emerald-600" tooltip="Quality score >= 3" />
+          <MetricCard title="Data Centers" value={leads.filter(l => l.sector?.toLowerCase().includes('data center') || l.sub_sector?.toLowerCase().includes('data center')).length} valueColor="text-slate-700" />
+          <MetricCard title="Renewable Energy" value={leads.filter(l => l.sector?.toLowerCase().includes('renew') || l.sector?.toLowerCase().includes('solar') || l.sector?.toLowerCase().includes('wind')).length} valueColor="text-slate-700" />
+          <MetricCard title="Oil & Gas" value={leads.filter(l => l.sector?.toLowerCase().includes('oil') || l.sector?.toLowerCase().includes('gas')).length} valueColor="text-slate-700" />
+        </div>
       </div>
 
       <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">A/B Testing & Email Performance</h3>
@@ -191,104 +163,38 @@ export function DashboardOverview() {
 
       <div className="space-y-8">
         
-        {/* Split Grid for Bottom Section: Outreach & Diagnostics */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* 3. EMAILS TABLE */}
-          <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-            <div className="p-5 border-b border-slate-200 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-slate-800">Recent Outreach</h2>
-            </div>
-            <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
-              <table className="w-full text-left text-sm whitespace-nowrap">
-                <thead className="bg-slate-50 border-b border-slate-200 sticky top-0">
-                  <tr className="text-slate-500 font-semibold tracking-wide">
-                    <th className="p-3 pl-5">Company</th>
-                    <th className="p-3">Sent At</th>
-                    <th className="p-3 text-right pr-5">Status</th>
+        {/* Bottom Section: Outreach Table */}
+        <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+          <div className="p-5 border-b border-slate-200 flex items-center justify-between">
+            <h2 className="text-lg font-bold text-slate-800">Recent Outreach Activity</h2>
+            <div className="text-xs text-slate-500 font-medium bg-slate-100 px-3 py-1 rounded-full">Showing last 1000 emails</div>
+          </div>
+          <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
+            <table className="w-full text-left text-sm whitespace-nowrap">
+              <thead className="bg-slate-50 border-b border-slate-200 sticky top-0 z-10">
+                <tr className="text-slate-500 font-semibold tracking-wide">
+                  <th className="p-3 pl-5">Company / Recipient</th>
+                  <th className="p-3">Sent At</th>
+                  <th className="p-3 text-right pr-5">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {emails.map(email => (
+                  <tr key={email.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="p-3 pl-5 font-medium text-slate-700">{email.companies?.name || email.recipient_email}</td>
+                    <td className="p-3 text-slate-500">{formatDistanceToNow(new Date(email.sent_at))} ago</td>
+                    <td className="p-3 pr-5 text-right">
+                      {email.bounced === 1 ? (
+                        <span className="inline-flex text-red-600 font-medium items-center gap-1.5 bg-red-50 px-2 py-1 rounded-md"><XCircle className="w-4 h-4"/> Bounced</span>
+                      ) : (
+                        <span className="inline-flex text-emerald-600 font-medium items-center gap-1.5 bg-emerald-50 px-2 py-1 rounded-md"><CheckCircle2 className="w-4 h-4"/> Delivered</span>
+                      )}
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {emails.map(email => (
-                    <tr key={email.id} className="hover:bg-slate-50">
-                      <td className="p-3 pl-5 font-medium text-slate-700">{email.companies?.name || email.recipient_email}</td>
-                      <td className="p-3 text-slate-500">{formatDistanceToNow(new Date(email.sent_at))} ago</td>
-                      <td className="p-3 pr-5 text-right">
-                        {email.bounced === 1 ? (
-                          <span className="inline-flex text-red-600 font-medium items-center gap-1"><XCircle className="w-4 h-4"/> Bounced</span>
-                        ) : (
-                          <span className="inline-flex text-emerald-600 font-medium items-center gap-1"><CheckCircle2 className="w-4 h-4"/> Delivered</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </div>
-
-          {/* 4. SCRAPER ANALYTICS */}
-          <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6 flex flex-col">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-[#0F766E]" /> Source Quality
-              </h2>
-            </div>
-            <div className="space-y-3 flex-grow overflow-y-auto max-h-[300px]">
-              {scraperStats.length === 0 ? (
-                 <div className="text-slate-400 text-sm italic">No data yet</div>
-              ) : scraperStats.map(stat => (
-                <div key={stat.name} className="p-3 rounded-lg border border-slate-100 bg-slate-50 flex justify-between items-center">
-                  <div>
-                    <div className="text-sm font-semibold text-slate-700 capitalize">{stat.name.replace(/_/g, ' ')}</div>
-                    <div className="text-xs text-slate-500">{stat.count} leads found</div>
-                  </div>
-                  <div className="text-right">
-                    <div className={`text-sm font-bold ${Number(stat.avgScore) >= 5 ? 'text-emerald-600' : 'text-amber-600'}`}>
-                      {stat.avgScore} <span className="text-xs font-normal text-slate-400">/ 10</span>
-                    </div>
-                    <div className="text-[10px] uppercase font-bold text-slate-400">AVG SCORE</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* 4. SCRAPER DIAGNOSTICS (Moved to Bottom Right) */}
-          <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6 flex flex-col">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                <Bot className="w-5 h-5 text-[#0F766E]" /> Automation
-              </h2>
-            </div>
-            
-            <button onClick={triggerGitHubAction} disabled={triggering} className="w-full mb-6 bg-[#0F766E] hover:bg-[#0d635c] text-white disabled:opacity-50 py-2.5 rounded-lg font-medium flex justify-center items-center gap-2 transition-colors shadow-md">
-              <Play className="w-4 h-4" /> {triggering ? 'Triggering...' : 'Force Run Cloud Scrapers'}
-            </button>
-
-            {triggerResult && (
-              <div className={`mb-6 p-3 rounded-md text-sm border ${triggerResult.success ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
-                {triggerResult.msg}
-              </div>
-            )}
-
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Recent Runs</h3>
-            <div className="space-y-3 flex-grow overflow-y-auto max-h-[300px]">
-              {runs.map(run => (
-                <div key={run.id} className="p-3 rounded-lg border border-slate-100 bg-slate-50 flex justify-between items-center">
-                  <div>
-                    <div className="text-sm font-semibold text-slate-700">{run.scraper_name}</div>
-                    <div className="text-xs text-slate-500">{formatDistanceToNow(new Date(run.started_at))} ago</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm font-bold text-[#0F766E]">+{run.new_leads_added}</div>
-                    <div className="text-[10px] uppercase font-bold text-slate-400">{run.status}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
         </div>
 
       </div>
@@ -297,22 +203,26 @@ export function DashboardOverview() {
   );
 }
 
-// --- Compact Stat Tab Component ---
-function StatTab({ title, value, valueColor, tooltip }: { title: string, value: number | string, valueColor: string, tooltip?: string }) {
+// --- Modern Metric Card Component (V1.5) ---
+function MetricCard({ title, value, valueColor, tooltip, subtitle }: { title: string, value: number | string, valueColor: string, tooltip?: string, subtitle?: string }) {
   return (
     <motion.div 
-      whileHover={{ y: -1 }}
-      className="w-full sm:w-auto sm:flex-1 bg-white border border-slate-200 rounded-lg px-4 py-2 shadow-sm flex items-center gap-3 relative group cursor-default"
+      whileHover={{ y: -2, scale: 1.01 }}
+      className="bg-white/90 backdrop-blur-sm border border-slate-200/60 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all relative group cursor-default flex flex-col justify-between overflow-hidden"
     >
-      <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">{title}</div>
-      <div className={`text-lg font-bold ${valueColor}`}>
+      <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-white/0 to-slate-100/50 rounded-bl-full pointer-events-none transition-all group-hover:scale-110"></div>
+      <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 z-10">{title}</div>
+      <div className={`text-4xl font-black tracking-tight z-10 ${valueColor}`}>
         {value === '...' ? (
-          <div className="h-5 w-10 bg-slate-100 animate-pulse rounded"></div>
+          <div className="h-10 w-24 bg-slate-100 animate-pulse rounded-lg"></div>
         ) : value}
       </div>
+      {subtitle && <div className="text-xs text-slate-400 font-medium mt-2 z-10">{subtitle}</div>}
+      
       {tooltip && (
-        <div className="absolute top-10 left-0 w-56 bg-slate-800 text-white text-xs p-3 rounded-lg shadow-xl opacity-0 pointer-events-none group-hover:opacity-100 transition-all z-50">
+        <div className="absolute -top-2 left-1/2 -translate-x-1/2 -translate-y-full w-56 bg-slate-800 text-white text-xs p-3 rounded-xl shadow-xl opacity-0 pointer-events-none group-hover:opacity-100 transition-all z-50 text-center">
           {tooltip}
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-full w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-l-transparent border-r-transparent border-t-slate-800"></div>
         </div>
       )}
     </motion.div>

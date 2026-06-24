@@ -1,0 +1,165 @@
+import os
+import re
+import json
+import time
+from playwright.sync_api import sync_playwright
+import google.generativeai as genai
+from db.client import DatabaseClient
+from dotenv import load_dotenv
+
+class DeepEnrichmentScraper:
+    def __init__(self):
+        self.db = DatabaseClient()
+        load_dotenv()
+        
+        api_key = os.environ.get("GEMINI_API_KEY")
+        if not api_key:
+            raise ValueError("GEMINI_API_KEY not found in .env")
+            
+        genai.configure(api_key=api_key)
+        self.model = genai.GenerativeModel('gemini-2.5-flash', generation_config={"response_mime_type": "application/json"})
+        self.rpm_limit = 10 # Stay safe below the 15 RPM free tier limit
+        self.sleep_time = 60 / self.rpm_limit
+
+    def fetch_website_text(self, domain):
+        """Uses Playwright to fetch the innerText of the homepage."""
+        if not domain.startswith('http'):
+            url = f"https://{domain}"
+        else:
+            url = domain
+            
+        text_content = ""
+        try:
+            with sync_playwright() as p:
+                browser = p.chromium.launch(headless=True)
+                page = browser.new_page()
+                page.set_default_timeout(15000)
+                
+                try:
+                    page.goto(url)
+                    time.sleep(2) # Wait for dynamic content
+                    text_content += page.evaluate("document.body.innerText")
+                    
+                    # Try to find an 'About' or 'Contact' page
+                    links = page.eval_on_selector_all("a", "elements => elements.map(e => e.href)")
+                    about_links = [l for l in links if 'about' in l.lower()][:1]
+                    if about_links:
+                        page.goto(about_links[0])
+                        time.sleep(2)
+                        text_content += "\n\n" + page.evaluate("document.body.innerText")
+                except Exception as e:
+                    print(f"   [!] Failed to load {url}: {e}", flush=True)
+                
+                browser.close()
+        except Exception as e:
+            print(f"   [!] Playwright error: {e}", flush=True)
+            
+        return text_content[:15000] # Limit tokens sent to Gemini
+
+    def extract_with_ai(self, text_content):
+        """Passes the website text to Gemini to extract structured JSON."""
+        if len(text_content.strip()) < 100:
+            return None
+            
+        prompt = """You are an expert firmographics data extractor.
+Analyze the following text scraped from a company's website.
+Extract the following information and return ONLY a valid JSON object.
+Do not use markdown blocks.
+
+JSON Schema:
+{
+    "city": "HQ City (or null if not found)",
+    "country": "HQ Country (or null if not found)",
+    "employee_size": "Estimated employee count like '50-200' (or null)",
+    "notes": "A concise 1-2 sentence description of what the company does and their specific engineering niche.",
+    "contact_name": "Full name of the CEO, Founder, or key executive (or null)",
+    "contact_title": "Title of that executive (or null)"
+}
+
+Website Text:
+""" + text_content
+
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                response = self.model.generate_content(prompt)
+                clean_text = response.text.strip()
+                if clean_text.startswith("```json"):
+                    clean_text = clean_text[7:]
+                if clean_text.endswith("```"):
+                    clean_text = clean_text[:-3]
+                    
+                result = json.loads(clean_text)
+                return result
+            except Exception as e:
+                print(f"   [!] AI extraction error (Attempt {attempt+1}): {e}", flush=True)
+                if attempt < max_retries - 1:
+                    time.sleep(5)
+                
+        return None
+
+    def run(self, limit=20):
+        print("=== STARTING DEEP AI ENRICHMENT ===", flush=True)
+        # Fetch leads that haven't been deep enriched yet (status is 'New Lead' or null)
+        try:
+            # First priority: Data Centers and Renewable Energy
+            res = self.db.supabase.table('companies').select('*')\
+                .or_('status.eq.New Lead,status.is.null')\
+                .not_.is_('domain', 'null')\
+                .in_('sector', ['Data Center Construction', 'Renewable Energy'])\
+                .limit(limit).execute()
+            
+            leads = res.data
+            
+            if len(leads) < limit:
+                # Fallback to other sectors
+                res2 = self.db.supabase.table('companies').select('*')\
+                    .or_('status.eq.New Lead,status.is.null')\
+                    .not_.is_('domain', 'null')\
+                    .limit(limit - len(leads)).execute()
+                leads.extend([l for l in res2.data if l['id'] not in [x['id'] for x in leads]])
+                
+        except Exception as e:
+            print(f"Error fetching leads: {e}", flush=True)
+            return
+            
+        if not leads:
+            print("No leads need deep enrichment.", flush=True)
+            return
+            
+        print(f"Found {len(leads)} leads to deep enrich.", flush=True)
+        
+        success_count = 0
+        for idx, lead in enumerate(leads, 1):
+            domain = lead.get('domain')
+            print(f"\n[{idx}/{len(leads)}] Deep enriching {domain}...", flush=True)
+            
+            text_content = self.fetch_website_text(domain)
+            if not text_content:
+                print("   -> No text extracted. Skipping.", flush=True)
+                continue
+                
+            print("   -> Text extracted. Querying Gemini...", flush=True)
+            ai_data = self.extract_with_ai(text_content)
+            
+            if ai_data:
+                updates = {'status': 'Enriched'} # Update tracking status
+                if ai_data.get('city'): updates['city'] = ai_data['city']
+                if ai_data.get('country'): updates['country'] = ai_data['country']
+                if ai_data.get('employee_size'): updates['employee_size'] = ai_data['employee_size']
+                if ai_data.get('notes'): updates['notes'] = ai_data['notes']
+                if ai_data.get('contact_name'): updates['contact_name'] = ai_data['contact_name']
+                if ai_data.get('contact_title'): updates['contact_title'] = ai_data['contact_title']
+                
+                # Update DB
+                self.db.supabase.table('companies').update(updates).eq('id', lead['id']).execute()
+                print(f"   -> Success! Found: {updates}", flush=True)
+                success_count += 1
+            else:
+                print("   -> AI extraction failed. Marking as failed.", flush=True)
+                self.db.supabase.table('companies').update({'status': 'Failed'}).eq('id', lead['id']).execute()
+                
+            time.sleep(self.sleep_time) # Respect rate limits
+            
+        print(f"\n=== DEEP ENRICHMENT COMPLETE ===", flush=True)
+        print(f"Successfully enriched {success_count}/{len(leads)} leads.", flush=True)

@@ -16,6 +16,11 @@ export function CRMDatabase() {
   const [filterSector, setFilterSector] = useState('all');
   const [filterEmail, setFilterEmail] = useState('all');
   
+  // Phase 4 Filters
+  const [filterEnrichment, setFilterEnrichment] = useState('all');
+  const [filterTier, setFilterTier] = useState('all');
+  const [filterRating, setFilterRating] = useState('all');
+  
   // Selection
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
@@ -45,6 +50,7 @@ export function CRMDatabase() {
 
   const countries = useMemo(() => Array.from(new Set(leads.map(l => l.country).filter(Boolean))).sort(), [leads]);
   const sectors = useMemo(() => Array.from(new Set(leads.map(l => l.sector).filter(Boolean))).sort(), [leads]);
+  const tiers = useMemo(() => Array.from(new Set(leads.map(l => l.sub_sector).filter(Boolean))).sort(), [leads]);
 
   const filteredLeads = useMemo(() => {
     return leads.filter(l => {
@@ -53,9 +59,15 @@ export function CRMDatabase() {
       const matchCountry = filterCountry === 'all' || l.country === filterCountry;
       const matchSector = filterSector === 'all' || l.sector === filterSector;
       const matchEmail = filterEmail === 'all' || (filterEmail === 'with_email' ? (l.email_1 || l.contact_email || l.email) : (!l.email_1 && !l.contact_email && !l.email));
-      return matchSearch && matchQuality && matchCountry && matchSector && matchEmail;
+      
+      const leadStatus = (l.status || 'New Lead').toLowerCase();
+      const matchEnrichment = filterEnrichment === 'all' || leadStatus === filterEnrichment.toLowerCase();
+      const matchTier = filterTier === 'all' || l.sub_sector === filterTier;
+      const matchRating = filterRating === 'all' || l.quality_score === parseInt(filterRating);
+
+      return matchSearch && matchQuality && matchCountry && matchSector && matchEmail && matchEnrichment && matchTier && matchRating;
     });
-  }, [leads, searchLeads, filterQuality, filterCountry, filterSector, filterEmail]);
+  }, [leads, searchLeads, filterQuality, filterCountry, filterSector, filterEmail, filterEnrichment, filterTier, filterRating]);
 
   // Pagination Logic
   const totalPages = Math.ceil(filteredLeads.length / rowsPerPage);
@@ -68,7 +80,7 @@ export function CRMDatabase() {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchLeads, filterQuality, filterCountry, filterSector, filterEmail]);
+  }, [searchLeads, filterQuality, filterCountry, filterSector, filterEmail, filterEnrichment, filterTier, filterRating]);
 
   const handleExportCSV = () => {
     const csvContent = "data:text/csv;charset=utf-8," 
@@ -150,8 +162,30 @@ export function CRMDatabase() {
             
             <select value={filterEmail} onChange={e => setFilterEmail(e.target.value)} className="border border-slate-300 rounded-md px-2 py-1.5 text-sm bg-white focus:outline-none focus:border-[#0F766E]">
               <option value="all">All Emails</option>
-              <option value="with_email">Has Email</option>
-              <option value="no_email">No Email</option>
+              <option value="with_email">Has Mail</option>
+              <option value="no_email">No Mail</option>
+            </select>
+
+            {/* Advanced Filters */}
+            <select value={filterEnrichment} onChange={e => setFilterEnrichment(e.target.value)} className="border border-slate-300 rounded-md px-2 py-1.5 text-sm bg-white focus:outline-none focus:border-[#0F766E]">
+              <option value="all">Any Enrichment</option>
+              <option value="new lead">Pending</option>
+              <option value="enriched">Enriched</option>
+              <option value="failed">Failed</option>
+            </select>
+
+            <select value={filterTier} onChange={e => setFilterTier(e.target.value)} className="border border-slate-300 rounded-md px-2 py-1.5 text-sm bg-white focus:outline-none focus:border-[#0F766E]">
+              <option value="all">All Tiers</option>
+              {tiers.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+
+            <select value={filterRating} onChange={e => setFilterRating(e.target.value)} className="border border-slate-300 rounded-md px-2 py-1.5 text-sm bg-white focus:outline-none focus:border-[#0F766E]">
+              <option value="all">All Ratings</option>
+              <option value="5">5 Stars</option>
+              <option value="4">4 Stars</option>
+              <option value="3">3 Stars</option>
+              <option value="2">2 Stars</option>
+              <option value="1">1 Star</option>
             </select>
 
             <button onClick={handleExportCSV} className="border border-slate-300 hover:bg-slate-50 text-slate-700 px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2 transition-colors">

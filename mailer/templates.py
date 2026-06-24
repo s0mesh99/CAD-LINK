@@ -224,9 +224,11 @@ def render_template(template: str, lead: dict) -> str:
         )
 
     # Tender description — only used in Template C
-    tender_desc = lead.get('tender_description', '').strip() if lead.get('tender_description') else ''
+    tender_desc = lead.get('tender_description')
     if tender_desc:
-        tender_desc = tender_desc[:100]  # keep it short in email
+        tender_desc = str(tender_desc).strip()[:100]  # keep it short in email
+    else:
+        tender_desc = ''
 
     # Country-specific signal
     country = lead.get('country', '')

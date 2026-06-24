@@ -2,8 +2,8 @@ name: V1.6 Automation Engine
 
 on:
   schedule:
-    # Run every 4 hours
-    - cron: '0 */4 * * *'
+    # Run once per day at 8:00 AM UTC (safely stays under the 20 requests/day Free Tier limit)
+    - cron: '0 8 * * *'
   workflow_dispatch: # Allow manual trigger from GitHub UI
 
 jobs:
@@ -31,12 +31,12 @@ jobs:
           
 
         
-      - name: Run AI Enrichment
+      - name: Run Deep AI Enrichment
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: python run.py --run-enrichment
+        run: python run.py --run-deep-enrichment
         
       - name: Run Campaign Blaster
         env:

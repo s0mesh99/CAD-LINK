@@ -162,6 +162,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="CAD LINK Freelance Bot V1.3")
     parser.add_argument('--run-scrapers', action='store_true', help="Run all data scrapers")
     parser.add_argument('--run-enrichment', action='store_true', help="Enrich leads missing emails")
+    parser.add_argument('--run-deep-enrichment', action='store_true', help="Deeply enrich leads with firmographics via AI")
     parser.add_argument('--send-emails', action='store_true', help="Send automated cold emails")
     parser.add_argument('--email-limit', type=int, default=20, help="Max number of emails to send")
     parser.add_argument('--phase', type=int, default=1, choices=[1,2,3], help="Campaign phase (1=ME, 2=India, 3=All)")
@@ -176,8 +177,12 @@ if __name__ == '__main__':
         run_scrapers()
         
     if args.run_enrichment:
-        enrich_leads(limit=100)
+        enrich_leads(limit=10000)
         
+    if args.run_deep_enrichment:
+        from scrapers.deep_enrichment import DeepEnrichmentScraper
+        scraper = DeepEnrichmentScraper()
+        scraper.run(limit=10000)
     if args.run_blaster:
         from mailer.campaign_blaster import run_campaign
         run_campaign()

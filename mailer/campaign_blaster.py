@@ -36,12 +36,12 @@ def run_campaign():
         if tracking_res.data:
             contacted_ids = {row['company_id'] for row in tracking_res.data}
         
-        # 2. Fetch Premium Leads
-        print("[DB] Fetching Premium Leads (Score >= 3)...")
-        leads_res = supabase.table('companies').select('*').gte('quality_score', 3).order('quality_score', desc=True).execute()
+        # 2. Fetch Enriched Leads
+        print("[DB] Fetching Enriched Leads...")
+        leads_res = supabase.table('companies').select('*').eq('status', 'Enriched').order('quality_score', desc=True).execute()
         
         if not leads_res.data:
-            print("[-] No Premium Leads found in the database.")
+            print("[-] No Enriched Leads found in the database. Run Deep Enrichment first.")
             return
             
         leads = leads_res.data
@@ -115,7 +115,8 @@ def run_campaign():
                     msg = MIMEMultipart('alternative')
                     msg['From'] = f"Somesh Nammina <{ZOHO_EMAIL}>"
                     
-                    contact_name = lead.get('contact_name', '').strip()
+                    contact_name = lead.get('contact_name')
+                    contact_name = str(contact_name).strip() if contact_name else ''
                     if contact_name:
                         msg['To'] = formataddr((contact_name, recipient))
                     else:
