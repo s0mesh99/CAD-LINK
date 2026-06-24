@@ -1,4 +1,4 @@
-name: V1.6 Automation Engine
+name: V1.6 Automation Engine (Lead Generation Branch)
 
 on:
   schedule:
@@ -29,19 +29,10 @@ jobs:
           # Install Playwright Headless Browser Engine
           playwright install --with-deps chromium
           
-
-        
-      - name: Run AI Enrichment
+      - name: Run Scrapers
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: python run.py --run-enrichment
-        
-      - name: Run Campaign Blaster
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-          ZOHO_EMAIL: ${{ secrets.ZOHO_EMAIL }}
-          ZOHO_APP_PASSWORD: ${{ secrets.ZOHO_APP_PASSWORD }}
-        run: python run.py --run-blaster
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python run.py --run-scrapers
