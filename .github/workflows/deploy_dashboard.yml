@@ -1,0 +1,38 @@
+name: Deploy Dashboard to Firebase
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - 'DASHBOARD/**'
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: DASHBOARD/package-lock.json
+          
+      - name: Install dependencies
+        working-directory: ./DASHBOARD
+        run: npm ci
+        
+      - name: Build Dashboard
+        working-directory: ./DASHBOARD
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: npm run build
+        
+      - name: Deploy to Firebase Hosting
+        working-directory: ./DASHBOARD
+        run: npx firebase-tools deploy --only hosting:admin --token ${{ secrets.FIREBASE_TOKEN }}
