@@ -81,13 +81,25 @@ class GithubApiScraper(BaseScraper):
             pass
         return ""
 
-    def process_file_content(self, text, url):
+    def process_file_content(self, text, url, query=""):
         emails = list(set(EMAIL_RE.findall(text)))
         domains = list(set(DOMAIN_RE.findall(text)))
         
         # Filter out generic or invalid domains
         bad_domains = ['github.com', 'google.com', 'yahoo.com', 'gmail.com', 'hotmail.com', 'outlook.com', 'example.com']
         
+        # Determine sector from query
+        sector = 'EPC'
+        query_lower = query.lower()
+        if 'data center' in query_lower:
+            sector = 'Data Center Construction'
+        elif 'solar' in query_lower or 'wind' in query_lower or 'renewable' in query_lower:
+            sector = 'Renewable Energy'
+        elif 'oil' in query_lower or 'gas' in query_lower or 'lng' in query_lower or 'pipeline' in query_lower:
+            sector = 'Oil and Gas'
+        elif 'civil' in query_lower or 'structural' in query_lower:
+            sector = 'Civil Engineering'
+            
         extracted = 0
         for email in emails:
             if any(email.lower().endswith(bd) for bd in bad_domains):
@@ -100,7 +112,7 @@ class GithubApiScraper(BaseScraper):
                     'name': domain.split('.')[0].capitalize() + ' (OSINT)',
                     'domain': domain,
                     'email_1': email,
-                    'sector': 'epc',
+                    'sector': sector,
                     'source_method': 'github_osint',
                     'source_url': url,
                     'notes': f"Extracted from public GitHub dataset"
@@ -162,7 +174,7 @@ class GithubApiScraper(BaseScraper):
                     if raw_url:
                         text = self._fetch_file_content(raw_url)
                         if text:
-                            found = self.process_file_content(text, html_url)
+                            found = self.process_file_content(text, html_url, query)
                             if found > 0:
                                 total_leads_found += found
                                 self.log.info(f"      + Found {found} OSINT leads in {item.get('name')}")
