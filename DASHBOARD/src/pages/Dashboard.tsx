@@ -41,9 +41,17 @@ export function DashboardOverview() {
     }
     setLeads(allLeads);
 
-    // Emails (Download a chunk for A/B testing analytics)
-    const { data: emailsData } = await supabase.from('email_tracking').select(`*, companies ( name, domain )`).order('sent_at', { ascending: false }).limit(2000);
-    const emailsArr = emailsData || [];
+    // Emails (Bypass Supabase 1000-row API limit using pagination)
+    let emailsArr: any[] = [];
+    let eFrom = 0;
+    const eStep = 1000;
+    while(true) {
+      const { data: emailsData } = await supabase.from('email_tracking').select(`*, companies ( name, domain )`).order('sent_at', { ascending: false }).range(eFrom, eFrom + eStep - 1);
+      if (!emailsData || emailsData.length === 0) break;
+      emailsArr = [...emailsArr, ...emailsData];
+      if (emailsData.length < eStep) break;
+      eFrom += eStep;
+    }
     setEmails(emailsArr);
 
     // KPI Stats (Calculated directly from loaded data to ensure perfect matching with the UI tables)
