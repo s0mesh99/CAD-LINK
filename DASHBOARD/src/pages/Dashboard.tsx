@@ -127,9 +127,9 @@ export function DashboardOverview() {
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
           <MetricCard title="Total Leads" value={loading ? '...' : stats.totalLeads} valueColor="text-slate-800" />
           <MetricCard title="Premium Leads" value={loading ? '...' : stats.premiumLeads} valueColor="text-emerald-600" tooltip="Quality score >= 3" />
-          <MetricCard title="Data Centers" value={leads.filter(l => l.sector?.toLowerCase().includes('data center') || l.sub_sector?.toLowerCase().includes('data center')).length} valueColor="text-slate-700" />
-          <MetricCard title="Renewable Energy" value={leads.filter(l => l.sector?.toLowerCase().includes('renew') || l.sector?.toLowerCase().includes('solar') || l.sector?.toLowerCase().includes('wind')).length} valueColor="text-slate-700" />
-          <MetricCard title="Oil & Gas" value={leads.filter(l => l.sector?.toLowerCase().includes('oil') || l.sector?.toLowerCase().includes('gas')).length} valueColor="text-slate-700" />
+          <MetricCard title="Data Centers" value={leads.filter(l => (l.sector || '').toLowerCase().includes('data center') || (l.sub_sector || '').toLowerCase().includes('data center')).length} valueColor="text-slate-700" />
+          <MetricCard title="Renewable Energy" value={leads.filter(l => (l.sector || '').toLowerCase().includes('renew') || (l.sector || '').toLowerCase().includes('solar') || (l.sector || '').toLowerCase().includes('wind')).length} valueColor="text-slate-700" />
+          <MetricCard title="Oil & Gas" value={leads.filter(l => (l.sector || '').toLowerCase().includes('oil') || (l.sector || '').toLowerCase().includes('gas')).length} valueColor="text-slate-700" />
         </div>
       </div>
 
