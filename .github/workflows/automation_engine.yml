@@ -29,13 +29,7 @@ jobs:
           # Install Playwright Headless Browser Engine
           playwright install --with-deps chromium
           
-      - name: Run Scrapers
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python run.py --run-scrapers
+
         
       - name: Run AI Enrichment
         env:
