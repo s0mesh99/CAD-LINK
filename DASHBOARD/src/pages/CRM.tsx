@@ -29,9 +29,17 @@ export function CRMDatabase() {
 
   async function fetchLeads() {
     setLoading(true);
-    // Fetch all outbound leads (up to 10k for now to allow client-side searching/filtering/Kanban)
-    const { data } = await supabase.from('companies').select('*').order('created_at', { ascending: false }).limit(10000);
-    setLeads(data || []);
+    let allLeads: any[] = [];
+    let from = 0;
+    const step = 1000;
+    while(true) {
+      const { data } = await supabase.from('companies').select('*').order('created_at', { ascending: false }).range(from, from + step - 1);
+      if (!data || data.length === 0) break;
+      allLeads = [...allLeads, ...data];
+      if (data.length < step) break; // Reached the end
+      from += step;
+    }
+    setLeads(allLeads);
     setLoading(false);
   }
 
