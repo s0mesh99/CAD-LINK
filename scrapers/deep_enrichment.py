@@ -61,13 +61,19 @@ class DeepEnrichmentScraper:
         if len(text_content.strip()) < 100:
             return None
             
-        prompt = """You are an expert firmographics data extractor.
+        prompt = """You are an expert firmographics data extractor and business analyst.
 Analyze the following text scraped from a company's website.
 Extract the following information and return ONLY a valid JSON object.
 Do not use markdown blocks.
 
+CRITICAL OUTSOURCING FILTER:
+Determine if this company is a good prospect for outsourcing/freelance CAD, drafting, or engineering work.
+- Set "is_outsourcing_target": true IF they are an engineering, architectural, manufacturing, or construction firm that likely needs CAD drafting, 3D modeling, or design support.
+- Set "is_outsourcing_target": false IF they are a generic software company, consumer brand, retail store, pure IT consulting, or explicitly state they do everything 100% in-house.
+
 JSON Schema:
 {
+    "is_outsourcing_target": true,
     "city": "HQ City (or null if not found)",
     "country": "HQ Country (or null if not found)",
     "employee_size": "Estimated employee count like '50-200' (or null)",
@@ -143,18 +149,25 @@ Website Text:
             ai_data = self.extract_with_ai(text_content)
             
             if ai_data:
-                updates = {'status': 'Enriched'} # Update tracking status
-                if ai_data.get('city'): updates['city'] = ai_data['city']
-                if ai_data.get('country'): updates['country'] = ai_data['country']
-                if ai_data.get('employee_size'): updates['employee_size'] = ai_data['employee_size']
-                if ai_data.get('notes'): updates['notes'] = ai_data['notes']
-                if ai_data.get('contact_name'): updates['contact_name'] = ai_data['contact_name']
-                if ai_data.get('contact_title'): updates['contact_title'] = ai_data['contact_title']
-                
-                # Update DB
-                self.db.supabase.table('companies').update(updates).eq('id', lead['id']).execute()
-                print(f"   -> Success! Found: {updates}", flush=True)
-                success_count += 1
+                is_target = ai_data.get('is_outsourcing_target', True) # Default to True if missing
+                if is_target:
+                    updates = {'status': 'Enriched'} # Update tracking status
+                    if ai_data.get('city'): updates['city'] = ai_data['city']
+                    if ai_data.get('country'): updates['country'] = ai_data['country']
+                    if ai_data.get('employee_size'): updates['employee_size'] = ai_data['employee_size']
+                    if ai_data.get('notes'): updates['notes'] = ai_data['notes']
+                    if ai_data.get('contact_name'): updates['contact_name'] = ai_data['contact_name']
+                    if ai_data.get('contact_title'): updates['contact_title'] = ai_data['contact_title']
+                    
+                    # Update DB
+                    self.db.supabase.table('companies').update(updates).eq('id', lead['id']).execute()
+                    print(f"   -> Success! Found & Enriched: {updates}", flush=True)
+                    success_count += 1
+                else:
+                    # AI determined they are not an outsourcing target
+                    updates = {'status': 'Rejected', 'notes': 'AI Filter: Not a CAD/Outsourcing target.'}
+                    self.db.supabase.table('companies').update(updates).eq('id', lead['id']).execute()
+                    print(f"   -> AI Filter Rejected: Not an outsourcing target.", flush=True)
             else:
                 print("   -> AI extraction failed. Marking as failed.", flush=True)
                 self.db.supabase.table('companies').update({'status': 'Failed'}).eq('id', lead['id']).execute()
