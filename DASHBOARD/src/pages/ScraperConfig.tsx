@@ -1,117 +1,69 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '../supabaseClient';
 import { motion } from 'motion/react';
-import { Settings, Plus, X, Save } from 'lucide-react';
+import { Server, Code2, Bot, Database, Mail } from 'lucide-react';
 
 export function ScraperConfig() {
-  const [services, setServices] = useState<string[]>([]);
-  const [regions, setRegions] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [newService, setNewService] = useState('');
-  const [newRegion, setNewRegion] = useState('');
-
-  useEffect(() => {
-    fetchConfig();
-  }, []);
-
-  async function fetchConfig() {
-    setLoading(true);
-    const { data, error } = await supabase.from('scraper_config').select('*');
-    if (data && !error) {
-      const srv = data.find(d => d.config_type === 'services')?.config_data || [];
-      const reg = data.find(d => d.config_type === 'regions')?.config_data || [];
-      setServices(srv);
-      setRegions(reg);
-    }
-    setLoading(false);
-  }
-
-  async function handleSave() {
-    setSaving(true);
-    await supabase.from('scraper_config').upsert({ config_type: 'services', config_data: services }, { onConflict: 'config_type' });
-    await supabase.from('scraper_config').upsert({ config_type: 'regions', config_data: regions }, { onConflict: 'config_type' });
-    setSaving(false);
-    alert('Scraper configuration saved securely to Supabase!');
-  }
-
-  const removeService = (idx: number) => setServices(services.filter((_, i) => i !== idx));
-  const removeRegion = (idx: number) => setRegions(regions.filter((_, i) => i !== idx));
-
-  const addService = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newService.trim()) return;
-    setServices([...services, `"${newService.trim()}"`]);
-    setNewService('');
-  };
-
-  const addRegion = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newRegion.trim()) return;
-    setRegions([...regions, `"${newRegion.trim()}"`]);
-    setNewRegion('');
-  };
-
-  if (loading) return <div className="text-center p-12 text-slate-500 font-medium animate-pulse">Loading Configuration Engine...</div>;
-
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-3xl font-display font-bold text-slate-900 flex items-center gap-3">
-            <Settings className="text-cadlink-600 w-8 h-8" />
-            Scraper Command Center
+            <Server className="text-cadlink-600 w-8 h-8" />
+            Active Automations
           </h2>
-          <p className="text-slate-500 mt-2 font-medium">Dynamically adjust what the Python bots hunt for across the web.</p>
+          <p className="text-slate-500 mt-2 font-medium">Read-only view of background processes running in your GitHub Actions CI/CD pipeline.</p>
         </div>
-        <button 
-          onClick={handleSave}
-          disabled={saving}
-          className="bg-cadlink-600 hover:bg-cadlink-700 disabled:opacity-50 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-md flex items-center gap-2"
-        >
-          <Save className="w-5 h-5" />
-          {saving ? 'Saving to Core...' : 'Deploy Changes'}
-        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Services Box */}
+        
+        {/* Deep Enrichment Automator */}
         <motion.div initial={{opacity: 0, y: 10}} animate={{opacity: 1, y: 0}} className="glass-card rounded-3xl p-8 border-t-4 border-t-emerald-500">
-          <h3 className="text-xl font-bold mb-4">Targeted Services & Sectors</h3>
+          <div className="flex items-center gap-4 mb-6">
+            <div className="bg-emerald-100 p-3 rounded-xl text-emerald-600">
+              <Bot className="w-8 h-8" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-slate-900">deep_enrichment.py</h3>
+              <p className="text-slate-500 font-mono text-sm">Cron: '0 8 * * *' (Daily at 8:00 AM UTC)</p>
+            </div>
+          </div>
           
-          <form onSubmit={addService} className="flex gap-2 mb-6">
-            <input type="text" value={newService} onChange={e => setNewService(e.target.value)} placeholder='e.g. data center engineering' className="flex-1 border border-slate-200 rounded-lg px-4 py-2 focus:ring-2 focus:ring-cadlink-500 outline-none" />
-            <button type="submit" className="bg-slate-900 text-white px-4 py-2 rounded-lg font-bold hover:bg-slate-800 flex items-center"><Plus className="w-4 h-4 mr-1"/> Add</button>
-          </form>
-
-          <div className="flex flex-wrap gap-2">
-            {services.map((srv, i) => (
-              <span key={i} className="inline-flex items-center gap-1 px-3 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-full text-sm font-medium">
-                {srv}
-                <button onClick={() => removeService(i)} className="hover:text-red-500 ml-1"><X className="w-3 h-3" /></button>
-              </span>
-            ))}
+          <div className="space-y-4 text-slate-600">
+            <p><strong>Purpose:</strong> This Python script is the "Deep Brain" of the system. It wakes up every morning and pulls the next batch of raw leads from Supabase.</p>
+            <p><strong>How it works:</strong> It uses Playwright to physically navigate to each lead's website, extracts the text, and feeds it into Google Gemini 2.5 Flash. Gemini acts as an AI gatekeeper to determine if the company is an engineering firm that outsources work.</p>
+            <p><strong>Database Actions:</strong> If Gemini approves the company, the status is set to <span className="font-mono bg-slate-100 px-1 rounded">Enriched</span>. If they are a consumer brand or don't outsource, the status is set to <span className="font-mono bg-slate-100 px-1 rounded">Rejected</span>.</p>
+          </div>
+          
+          <div className="mt-6 pt-6 border-t border-slate-100 flex items-center gap-2 text-sm text-emerald-700 font-medium">
+            <Code2 className="w-4 h-4" />
+            Runs autonomously via GitHub Actions. Config changes must be made via Git.
           </div>
         </motion.div>
 
-        {/* Regions Box */}
+        {/* Campaign Blaster */}
         <motion.div initial={{opacity: 0, y: 10}} animate={{opacity: 1, y: 0}} transition={{delay: 0.1}} className="glass-card rounded-3xl p-8 border-t-4 border-t-blue-500">
-          <h3 className="text-xl font-bold mb-4">Targeted Global Regions</h3>
+          <div className="flex items-center gap-4 mb-6">
+            <div className="bg-blue-100 p-3 rounded-xl text-blue-600">
+              <Mail className="w-8 h-8" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-slate-900">campaign_blaster.py</h3>
+              <p className="text-slate-500 font-mono text-sm">Cron: '30 8 * * *' (Daily at 8:30 AM UTC)</p>
+            </div>
+          </div>
           
-          <form onSubmit={addRegion} className="flex gap-2 mb-6">
-            <input type="text" value={newRegion} onChange={e => setNewRegion(e.target.value)} placeholder='e.g. Frankfurt' className="flex-1 border border-slate-200 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
-            <button type="submit" className="bg-slate-900 text-white px-4 py-2 rounded-lg font-bold hover:bg-slate-800 flex items-center"><Plus className="w-4 h-4 mr-1"/> Add</button>
-          </form>
+          <div className="space-y-4 text-slate-600">
+            <p><strong>Purpose:</strong> This Python script is responsible for executing your daily quota of 20 cold outreach emails safely to protect your domain reputation.</p>
+            <p><strong>How it works:</strong> It queries Supabase for 20 leads that are currently marked as <span className="font-mono bg-slate-100 px-1 rounded">Enriched</span> (having successfully passed the AI gatekeeper). It uses the Zoho SMTP server to dispatch the personalized HTML emails.</p>
+            <p><strong>Database Actions:</strong> Upon a successful send, it logs the event in the <span className="font-mono bg-slate-100 px-1 rounded">email_tracking</span> table and updates the company status to <span className="font-mono bg-slate-100 px-1 rounded">Emailed</span>.</p>
+          </div>
 
-          <div className="flex flex-wrap gap-2">
-            {regions.map((reg, i) => (
-              <span key={i} className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-800 border border-blue-200 rounded-full text-sm font-medium">
-                {reg}
-                <button onClick={() => removeRegion(i)} className="hover:text-red-500 ml-1"><X className="w-3 h-3" /></button>
-              </span>
-            ))}
+          <div className="mt-6 pt-6 border-t border-slate-100 flex items-center gap-2 text-sm text-blue-700 font-medium">
+            <Database className="w-4 h-4" />
+            Respects Zoho's daily sending limits automatically via delay loops.
           </div>
         </motion.div>
+
       </div>
     </div>
   );

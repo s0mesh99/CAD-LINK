@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { Database, Users, LogOut, Settings, Mail } from 'lucide-react';
+import { Database, Users, LogOut, Settings, Mail, Send, Server, LayoutTemplate } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export function cn(...inputs: ClassValue[]) {
@@ -80,8 +80,8 @@ export function Layout({
                   currentTab === 'inbox' ? "bg-white text-cadlink-700 shadow-sm border border-slate-200/50" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
                 )}
               >
-                <Mail className="w-4 h-4" />
-                AI Inbox
+                <Send className="w-4 h-4" />
+                Daily Dispatched
               </button>
               <button 
                 onClick={() => setCurrentTab('leads')}
@@ -100,8 +100,8 @@ export function Layout({
                   currentTab === 'scrapers' ? "bg-white text-cadlink-700 shadow-sm border border-slate-200/50" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
                 )}
               >
-                <Settings className="w-4 h-4" />
-                Scrapers
+                <Server className="w-4 h-4" />
+                Automations
               </button>
               <button 
                 onClick={() => setCurrentTab('templates')}
@@ -110,7 +110,7 @@ export function Layout({
                   currentTab === 'templates' ? "bg-white text-cadlink-700 shadow-sm border border-slate-200/50" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
                 )}
               >
-                <Mail className="w-4 h-4" />
+                <LayoutTemplate className="w-4 h-4" />
                 Templates
               </button>
             </nav>
