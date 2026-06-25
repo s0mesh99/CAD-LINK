@@ -19,13 +19,13 @@ function App() {
 
   const renderContent = () => {
     switch (currentTab) {
-      case 'dashboard': return <DashboardOverview />;
+      case 'dashboard': return <DashboardOverview setCurrentTab={setCurrentTab} />;
       case 'crm': return <CRMDatabase />;
       case 'inbox': return <InboxManager />;
       case 'leads': return <LeadsOverview />;
       case 'scrapers': return <ScraperConfig />;
       case 'templates': return <EmailTemplates />;
-      default: return <DashboardOverview />;
+      default: return <DashboardOverview setCurrentTab={setCurrentTab} />;
     }
   };
 

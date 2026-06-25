@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { motion } from 'motion/react';
-import { Mail, Save, LayoutTemplate, PenTool } from 'lucide-react';
+import { Save, LayoutTemplate, PenTool } from 'lucide-react';
 
 interface Template {
   template_name: string;

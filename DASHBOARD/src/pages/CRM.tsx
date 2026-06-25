@@ -30,6 +30,19 @@ export function CRMDatabase() {
 
   useEffect(() => {
     fetchLeads();
+    
+    // Quick Links Navigation (V1.6)
+    if (window.location.hash) {
+      const hash = window.location.hash.substring(1);
+      const [key, value] = hash.split('=');
+      if (key === 'filterEnrichment') {
+        setFilterEnrichment(decodeURIComponent(value));
+      } else if (key === 'search') {
+        setSearchLeads(decodeURIComponent(value));
+      }
+      // Clear hash so it doesn't stick around on manual refresh
+      window.history.replaceState(null, '', window.location.pathname);
+    }
   }, []);
 
   async function fetchLeads() {
@@ -99,6 +112,14 @@ export function CRMDatabase() {
     const ids = Array.from(selectedIds);
     await supabase.from('companies').delete().in('id', ids);
     setLeads(leads.filter(l => !selectedIds.has(l.id)));
+    setSelectedIds(new Set());
+  };
+
+  const handleBulkMove = async (newStatus: string) => {
+    if (!newStatus || selectedIds.size === 0) return;
+    const ids = Array.from(selectedIds);
+    await supabase.from('companies').update({ status: newStatus }).in('id', ids);
+    setLeads(leads.map(l => selectedIds.has(l.id) ? { ...l, status: newStatus } : l));
     setSelectedIds(new Set());
   };
 
@@ -192,9 +213,24 @@ export function CRMDatabase() {
               <Download className="w-4 h-4" /> Export
             </button>
             {selectedIds.size > 0 && viewMode === 'table' && (
-              <button onClick={handleBulkDeleteLeads} className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2 transition-colors">
-                <Trash2 className="w-4 h-4" /> Delete ({selectedIds.size})
-              </button>
+              <div className="flex items-center gap-2 animate-in fade-in zoom-in duration-200">
+                <select 
+                  onChange={(e) => handleBulkMove(e.target.value)} 
+                  className="bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 px-3 py-1.5 rounded-md text-sm font-bold focus:outline-none transition-colors cursor-pointer"
+                  value=""
+                >
+                  <option value="" disabled>Move {selectedIds.size} to...</option>
+                  <option value="New Lead">New Lead</option>
+                  <option value="Contacted">Contacted</option>
+                  <option value="Meeting Booked">Meeting Booked</option>
+                  <option value="Proposal Sent">Proposal Sent</option>
+                  <option value="Closed Won">Closed Won</option>
+                  <option value="Rejected">Rejected</option>
+                </select>
+                <button onClick={handleBulkDeleteLeads} className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2 transition-colors">
+                  <Trash2 className="w-4 h-4" /> Delete ({selectedIds.size})
+                </button>
+              </div>
             )}
           </div>
         </div>

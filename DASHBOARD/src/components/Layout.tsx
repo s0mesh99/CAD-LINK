@@ -1,7 +1,8 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { Database, Users, LogOut, Settings, Mail, Send, Server, LayoutTemplate } from 'lucide-react';
+import { Database, Users, LogOut, Send, Server, LayoutTemplate, Search } from 'lucide-react';
 import { motion } from 'motion/react';
+import { useState } from 'react';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -20,6 +21,17 @@ export function Layout({
   setCurrentTab?: (tab: TabType) => void,
   onLogout?: () => void
 }) {
+  const [globalSearch, setGlobalSearch] = useState('');
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (globalSearch.trim() && setCurrentTab) {
+      window.location.hash = `#search=${encodeURIComponent(globalSearch.trim())}`;
+      setCurrentTab('crm');
+      setGlobalSearch('');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-cadlink-600/20">
       {/* Top Navigation Bar */}
@@ -33,7 +45,7 @@ export function Layout({
               <span className="text-cadlink-600">Link</span>
             </div>
             <div className="px-2 py-0.5 bg-cadlink-50 border border-cadlink-200 text-cadlink-700 text-[9px] md:text-[10px] font-bold rounded-full uppercase tracking-wider ml-1 whitespace-nowrap">
-              ADMIN V1.4
+              ADMIN V1.6
             </div>
           </div>
 
@@ -117,8 +129,19 @@ export function Layout({
           </div>
         )}
 
-        {/* Desktop Logout Row */}
-        <div className="hidden md:block">
+        {/* Desktop Search & Logout Row */}
+        <div className="hidden md:flex items-center gap-4">
+          <form onSubmit={handleSearch} className="relative">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input 
+              type="text" 
+              placeholder="Search companies, emails..." 
+              value={globalSearch}
+              onChange={(e) => setGlobalSearch(e.target.value)}
+              className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-cadlink-500 w-64 transition-all focus:w-80"
+            />
+          </form>
+
           {onLogout && (
             <button 
               onClick={onLogout}

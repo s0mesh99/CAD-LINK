@@ -6,7 +6,7 @@ import {
 import { motion } from 'motion/react';
 import { formatDistanceToNow } from 'date-fns';
 
-export function DashboardOverview() {
+export function DashboardOverview({ setCurrentTab }: { setCurrentTab?: (tab: any) => void }) {
   const [stats, setStats] = useState({ 
     totalLeads: 0, premiumLeads: 0, totalEmails: 0, bouncedEmails: 0, enrichedEmails: 0,
     pendingLeads: 0, successfullyEnriched: 0, failedEnrichment: 0, aiRejected: 0
@@ -115,10 +115,10 @@ export function DashboardOverview() {
       <div>
         <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">AI Enrichment Pipeline</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
-          <MetricCard title="Awaiting Deep AI" value={loading ? '...' : stats.pendingLeads} valueColor="text-slate-700" subtitle="Queued for tomorrow's run" tooltip="Leads currently marked as 'New Lead' waiting to be scraped." />
-          <MetricCard title="Successfully Enriched" value={loading ? '...' : stats.successfullyEnriched} valueColor="text-[#0F766E]" subtitle="Ready for Email Blaster" tooltip="Leads that have been successfully deep-researched by Gemini 2.5 Flash." />
-          <MetricCard title="Rejected by AI" value={loading ? '...' : stats.aiRejected} valueColor="text-amber-600" subtitle="Not an outsourcing target" tooltip="Companies identified by AI as pure software, consumer brands, or those who do not outsource." />
-          <MetricCard title="AI Failure Rate" value={loading ? '...' : stats.totalLeads > 0 ? `${((stats.failedEnrichment / stats.totalLeads)*100).toFixed(1)}%` : '0%'} valueColor="text-red-500" subtitle={`${stats.failedEnrichment} dead websites`} tooltip="Percentage of websites that blocked Playwright or had no text." />
+          <MetricCard title="Awaiting Deep AI" value={loading ? '...' : stats.pendingLeads} valueColor="text-slate-700" subtitle="Queued for tomorrow's run" tooltip="Click to view pending leads in CRM" onClick={() => { if(setCurrentTab) { window.location.hash = '#filterEnrichment=new lead'; setCurrentTab('crm'); } }} />
+          <MetricCard title="Successfully Enriched" value={loading ? '...' : stats.successfullyEnriched} valueColor="text-[#0F766E]" subtitle="Ready for Email Blaster" tooltip="Click to view enriched leads in CRM" onClick={() => { if(setCurrentTab) { window.location.hash = '#filterEnrichment=enriched'; setCurrentTab('crm'); } }} />
+          <MetricCard title="Rejected by AI" value={loading ? '...' : stats.aiRejected} valueColor="text-amber-600" subtitle="Not an outsourcing target" tooltip="Click to view rejected leads in CRM" onClick={() => { if(setCurrentTab) { window.location.hash = '#filterEnrichment=rejected'; setCurrentTab('crm'); } }} />
+          <MetricCard title="AI Failure Rate" value={loading ? '...' : stats.totalLeads > 0 ? `${((stats.failedEnrichment / stats.totalLeads)*100).toFixed(1)}%` : '0%'} valueColor="text-red-500" subtitle={`${stats.failedEnrichment} dead websites`} tooltip="Click to view failed leads in CRM" onClick={() => { if(setCurrentTab) { window.location.hash = '#filterEnrichment=failed'; setCurrentTab('crm'); } }} />
           <MetricCard title="Total Dispatched" value={loading ? '...' : stats.totalEmails} valueColor="text-indigo-600" subtitle="Cold emails successfully sent" tooltip="The total amount of emails successfully delivered by the Campaign Blaster." />
         </div>
       </div>
@@ -206,14 +206,18 @@ export function DashboardOverview() {
 }
 
 // --- Modern Metric Card Component (V1.5) ---
-function MetricCard({ title, value, valueColor, tooltip, subtitle }: { title: string, value: number | string, valueColor: string, tooltip?: string, subtitle?: string }) {
+function MetricCard({ title, value, valueColor, tooltip, subtitle, onClick }: { title: string, value: number | string, valueColor: string, tooltip?: string, subtitle?: string, onClick?: () => void }) {
   return (
     <motion.div 
-      whileHover={{ y: -2, scale: 1.01 }}
-      className="bg-white/90 backdrop-blur-sm border border-slate-200/60 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all relative group cursor-default flex flex-col justify-between overflow-hidden"
+      onClick={onClick}
+      whileHover={onClick ? { y: -2, scale: 1.02 } : { y: -2, scale: 1.01 }}
+      className={`bg-white/90 backdrop-blur-sm border border-slate-200/60 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all relative group flex flex-col justify-between overflow-hidden ${onClick ? 'cursor-pointer hover:border-[#0F766E]/50' : 'cursor-default'}`}
     >
       <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-white/0 to-slate-100/50 rounded-bl-full pointer-events-none transition-all group-hover:scale-110"></div>
-      <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 z-10">{title}</div>
+      <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 z-10 flex justify-between items-start">
+        {title}
+        {onClick && <span className="text-[#0F766E] opacity-0 group-hover:opacity-100 transition-opacity">↗</span>}
+      </div>
       <div className={`text-4xl font-black tracking-tight z-10 ${valueColor}`}>
         {value === '...' ? (
           <div className="h-10 w-24 bg-slate-100 animate-pulse rounded-lg"></div>
