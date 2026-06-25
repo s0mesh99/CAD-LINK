@@ -49,7 +49,7 @@ export function Layout({
             </div>
           </div>
 
-          <div className="md:hidden">
+          <div className="md:hidden flex items-center gap-2">
             {onLogout && (
               <button 
                 onClick={onLogout}
@@ -59,6 +59,20 @@ export function Layout({
               </button>
             )}
           </div>
+        </div>
+
+        {/* Mobile Search Bar */}
+        <div className="w-full md:hidden mb-1">
+          <form onSubmit={handleSearch} className="relative">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input 
+              type="text" 
+              placeholder="Search companies, emails..." 
+              value={globalSearch}
+              onChange={(e) => setGlobalSearch(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-cadlink-500"
+            />
+          </form>
         </div>
 
         {/* Navigation Tabs (Scrollable on Mobile) */}
