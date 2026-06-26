@@ -45,7 +45,7 @@ export function Layout({
               <span className="text-cadlink-600">Link</span>
             </div>
             <div className="px-2 py-0.5 bg-cadlink-50 border border-cadlink-200 text-cadlink-700 text-[9px] md:text-[10px] font-bold rounded-full uppercase tracking-wider ml-1 whitespace-nowrap">
-              ADMIN V1.6
+              ADMIN V1.7
             </div>
           </div>
 

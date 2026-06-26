@@ -69,8 +69,24 @@ export function CRMBoard({ leads, setLeads }: { leads: any[], setLeads: any }) {
                   {lead.quality_score >= 4 && <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-bold">HOT</span>}
                 </div>
                 {lead.domain && <div className="text-xs text-slate-500 mb-2 truncate">{lead.domain}</div>}
+                {lead.notes && (
+                  <div className="text-[11px] text-slate-600 bg-slate-50 rounded p-1.5 mt-2 line-clamp-3 leading-snug border border-slate-100 italic">
+                    {lead.notes}
+                  </div>
+                )}
+                {lead._followUpDue && (
+                  <div className="mt-3 flex items-center justify-between">
+                    <span className="text-[10px] text-slate-400 font-medium">Follow-up:</span>
+                    <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold ${lead._isOverdue ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>
+                      {lead._isOverdue ? 'OVERDUE' : 'SCHEDULED'}
+                      <span className={lead._isOverdue ? 'text-amber-600/80' : 'text-slate-400'}>
+                        {new Date(lead._followUpDue).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                      </span>
+                    </div>
+                  </div>
+                )}
                 
-                <div className="flex items-center justify-between text-xs text-slate-500 mt-4 pt-3 border-t border-slate-100">
+                <div className="flex items-center justify-between text-xs text-slate-500 mt-3 pt-3 border-t border-slate-100">
                   <div className="flex items-center gap-1.5 font-medium">
                     <Mail className="w-3.5 h-3.5 text-slate-400" />
                     <span className="truncate max-w-[120px]">{lead.contact_email || lead.email_1 || 'No email'}</span>

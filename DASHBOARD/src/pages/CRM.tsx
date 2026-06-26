@@ -51,9 +51,31 @@ export function CRMDatabase() {
     let from = 0;
     const step = 1000;
     while(true) {
-      const { data } = await supabase.from('companies').select('*').order('created_at', { ascending: false }).range(from, from + step - 1);
+      const { data } = await supabase.from('companies').select('*, email_tracking(*)').order('created_at', { ascending: false }).range(from, from + step - 1);
       if (!data || data.length === 0) break;
-      allLeads = [...allLeads, ...data];
+      
+      // Compute follow-up data per lead
+      const processedData = data.map(lead => {
+        let followUpDue = null;
+        let isOverdue = false;
+        
+        if (lead.email_tracking && lead.email_tracking.length > 0) {
+          // Sort by latest sent_at
+          const latest = [...lead.email_tracking].sort((a, b) => new Date(b.sent_at).getTime() - new Date(a.sent_at).getTime())[0];
+          if (latest && latest.follow_up_due && !latest.replied && !latest.follow_up_sent) {
+            followUpDue = latest.follow_up_due;
+            isOverdue = new Date(followUpDue) < new Date();
+          }
+        }
+        
+        return {
+          ...lead,
+          _followUpDue: followUpDue,
+          _isOverdue: isOverdue
+        };
+      });
+      
+      allLeads = [...allLeads, ...processedData];
       if (data.length < step) break; // Reached the end
       from += step;
     }
@@ -256,9 +278,9 @@ export function CRMDatabase() {
                         className="rounded border-slate-300 text-[#0F766E] focus:ring-[#0F766E]"
                       />
                     </th>
-                    <th className="p-4 whitespace-nowrap">Company & Domain</th>
-                    <th className="p-4 whitespace-nowrap">Location</th>
-                    <th className="p-4 whitespace-nowrap">Industry</th>
+                    <th className="p-4 whitespace-nowrap min-w-[250px]">Company & Domain</th>
+                    <th className="p-4 whitespace-nowrap">Status</th>
+                    <th className="p-4 whitespace-nowrap">Follow-up</th>
                     <th className="p-4 whitespace-nowrap">Contact Info</th>
                     <th className="p-4 whitespace-nowrap">Size / Revenue</th>
                     <th className="p-4 whitespace-nowrap">Source Info</th>
@@ -298,19 +320,32 @@ export function CRMDatabase() {
                             className="rounded border-slate-300 text-[#0F766E] focus:ring-[#0F766E]"
                           />
                         </td>
-                        <td className="p-4">
+                        <td className="p-4 min-w-[250px]">
                           <div className="font-bold text-slate-800 flex items-center gap-2 group-hover:text-[#0F766E] transition-colors">
                             {lead.name || '-'}
                           </div>
                           {lead.domain && <a href={`https://${lead.domain}`} target="_blank" className="text-xs font-medium text-slate-400 hover:text-blue-600 hover:underline transition-colors mt-0.5 inline-block">{lead.domain}</a>}
                         </td>
-                        <td className="p-4 text-sm text-slate-600">
-                          <div className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 text-slate-400"/> {lead.country || '-'}</div>
-                          <div className="text-xs text-slate-400 mt-1 pl-5">{(lead.city || lead.region) ? [lead.city, lead.region].filter(Boolean).join(', ') : ''}</div>
+                        <td className="p-4 text-sm">
+                          <div className="flex flex-col gap-1 mt-1">
+                            {lead.status === 'Contacted' && <span className="w-fit bg-indigo-100 text-indigo-700 text-[10px] px-2 py-0.5 rounded-full font-bold">Contacted</span>}
+                            {lead.status === 'Enriched' && <span className="w-fit bg-emerald-100 text-emerald-700 text-[10px] px-2 py-0.5 rounded-full font-bold">Enriched</span>}
+                            {lead.status === 'New Lead' && <span className="w-fit bg-slate-100 text-slate-600 text-[10px] px-2 py-0.5 rounded-full font-bold">Pending AI</span>}
+                          </div>
                         </td>
-                        <td className="p-4 text-sm text-slate-600">
-                          <div className="flex items-center gap-1.5 font-medium"><Building2 className="w-3.5 h-3.5 text-slate-400"/> {lead.sector || '-'}</div>
-                          {lead.sub_sector && <div className="text-xs text-slate-400 mt-1 pl-5">{lead.sub_sector}</div>}
+                        <td className="p-4 whitespace-nowrap">
+                          {lead._followUpDue ? (
+                            <div className={`flex flex-col items-start gap-1`}>
+                              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${lead._isOverdue ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>
+                                {lead._isOverdue ? 'Overdue' : 'Scheduled'}
+                              </span>
+                              <span className={`text-xs ${lead._isOverdue ? 'text-amber-600 font-semibold' : 'text-slate-500'}`}>
+                                {new Date(lead._followUpDue).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-slate-400">—</span>
+                          )}
                         </td>
                         <td className="p-4 text-sm">
                           <div className="font-bold text-slate-700">{lead.contact_name ? `${lead.contact_name} ${lead.contact_title ? `(${lead.contact_title})` : ''}` : 'No Name'}</div>
@@ -323,7 +358,6 @@ export function CRMDatabase() {
                               ))}
                             </div>
                           ) : <span className="text-xs font-medium text-amber-600/70 bg-amber-50 px-2 py-0.5 rounded border border-amber-100/50 inline-block mt-1">No email found</span>}
-                          {lead.phone && <div className="text-xs font-medium text-slate-600 mt-1.5 flex items-center gap-1.5"><span className="text-slate-400">📞</span> {lead.phone}</div>}
                         </td>
                         <td className="p-4 text-sm text-slate-600">
                           <div className="flex items-center gap-1.5"><Briefcase className="w-3.5 h-3.5 text-slate-400"/> {lead.employee_count || lead.employee_size || '-'}</div>

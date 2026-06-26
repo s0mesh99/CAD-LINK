@@ -19,9 +19,9 @@ def plain_to_html(plain_text: str) -> str:
         <img src="https://cad-link.web.app/logo.png" alt="CAD LINK" width="140" style="display:block; margin-bottom:15px;">
     </a>
     <div style="margin-top: 15px; font-family: Arial, sans-serif;">
-        <a href="https://www.cadlink.in/" style="display:inline-block; padding:8px 15px; margin-right:8px; background-color:#0F766E; color:#ffffff; text-decoration:none; border-radius:5px; font-size:13px; font-weight:bold;">Visit Website</a>
-        <a href="https://www.linkedin.com/company/cad-link-engg/" style="display:inline-block; padding:8px 15px; margin-right:8px; background-color:#0077b5; color:#ffffff; text-decoration:none; border-radius:5px; font-size:13px; font-weight:bold;">LinkedIn</a>
-        <a href="mailto:somesh.nammina@cadlink.in" style="display:inline-block; padding:8px 15px; background-color:#333333; color:#ffffff; text-decoration:none; border-radius:5px; font-size:13px; font-weight:bold;">Email Me</a>
+        <a href="https://cadlink.in/" style="display:inline-block; margin-right:20px; color:#64748b; text-decoration:none; font-size:13px; font-weight:bold;">Visit Website</a>
+        <a href="https://www.linkedin.com/company/cad-link-engg/" style="display:inline-block; margin-right:20px; color:#64748b; text-decoration:none; font-size:13px; font-weight:bold;">LinkedIn</a>
+        <a href="mailto:somesh.nammina@cadlink.in" style="display:inline-block; color:#64748b; text-decoration:none; font-size:13px; font-weight:bold;">Email Me</a>
     </div>
     '''
     

@@ -8,12 +8,18 @@ from supabase import create_client, Client
 
 from mailer.templates import select_template, render_template
 from mailer.zoho import plain_to_html
+from db.client import DatabaseClient
+import google.generativeai as genai
 
 load_dotenv()
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 ZOHO_EMAIL = os.environ.get("ZOHO_EMAIL")
 ZOHO_PASSWORD = os.environ.get("ZOHO_APP_PASSWORD")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
 
 # Protect the main domain: Send very small batches to avoid spam filters
 # Since the Action runs 6 times a day, 4 per batch = 24 emails per day.
@@ -27,6 +33,7 @@ def run_campaign():
         return
 
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+    db = DatabaseClient()
 
     try:
         # 1. Fetch previously contacted company IDs
@@ -104,6 +111,20 @@ def run_campaign():
             
             for lead in target_leads:
                 try:
+                    # AI Custom Icebreaker Generation
+                    if lead.get('notes') and GEMINI_API_KEY:
+                        try:
+                            prompt = f"""You are sending a cold email to a prospective client.
+Company Notes: "{lead['notes']}"
+Write a single, friendly, casual 10-15 word sentence saying you visited their website and noticed the kind of work they do, complimenting them briefly or acknowledging their specific niche.
+Start the sentence exactly with "I have visited your website and...". Do not use quotes or markdown. Keep it very natural and professional."""
+                            model = genai.GenerativeModel('gemini-2.5-flash')
+                            response = model.generate_content(prompt)
+                            if response.text:
+                                lead['icebreaker'] = response.text.strip().strip('"')
+                        except Exception as e:
+                            print(f"  [!] AI Icebreaker failed for {lead.get('name')}: {e}")
+                    
                     # Select and Render Template
                     subject_template, body_template, template_name = select_template(lead)
                     subject = render_template(subject_template, lead)
@@ -132,17 +153,18 @@ def run_campaign():
                     print(f"  -> [{sent_count+1}/{len(target_leads)}] Sending '{template_name}' to {lead.get('name')} ({recipient})...")
                     smtp.sendmail(ZOHO_EMAIL, recipient, msg.as_string())
                     
-                    # Log to Supabase
-                    supabase.table('email_tracking').insert({
-                        'company_id': lead['id'],
-                        'recipient_email': recipient,
-                        'recipient_name': lead.get('contact_name', lead.get('name')),
-                        'subject': subject,
-                        'campaign_phase': 1,
-                        'open_count': 0,
-                        'replied': 0,
-                        'bounced': 0
-                    }).execute()
+                    # Log to Supabase using db client to auto-calculate follow_up_due
+                    db.log_email_sent(
+                        company_id=lead['id'],
+                        recipient_email=recipient,
+                        recipient_name=lead.get('contact_name', lead.get('name')),
+                        subject=subject,
+                        phase=1,
+                        template_name=template_name
+                    )
+                    
+                    # Update company status to Contacted
+                    supabase.table('companies').update({'status': 'Contacted'}).eq('id', lead['id']).execute()
                     
                     sent_count += 1
                     

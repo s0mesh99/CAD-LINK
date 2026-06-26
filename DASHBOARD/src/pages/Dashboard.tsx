@@ -4,7 +4,7 @@ import {
   CheckCircle2, XCircle
 } from 'lucide-react';
 import { motion } from 'motion/react';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, isToday, parseISO } from 'date-fns';
 
 export function DashboardOverview({ setCurrentTab }: { setCurrentTab?: (tab: any) => void }) {
   const [stats, setStats] = useState({ 
@@ -89,6 +89,17 @@ export function DashboardOverview({ setCurrentTab }: { setCurrentTab?: (tab: any
       .sort((a, b) => b.sends - a.sends);
   }, [emails]);
 
+  const sentTodayEmails = useMemo(() => {
+    return emails.filter(e => {
+      if (!e.sent_at) return false;
+      try {
+        return isToday(parseISO(e.sent_at));
+      } catch (err) {
+        return false;
+      }
+    });
+  }, [emails]);
+
   return (
     <div className="space-y-10 animate-in fade-in duration-700">
       
@@ -135,7 +146,63 @@ export function DashboardOverview({ setCurrentTab }: { setCurrentTab?: (tab: any
         </div>
       </div>
 
-      <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">A/B Testing & Email Performance</h3>
+      {/* V1.7 Sent Today Activity */}
+      <div>
+        <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+          <Send className="w-4 h-4 text-cadlink-500" /> 
+          Sent Today (AI Blaster Activity)
+          <span className="bg-cadlink-100 text-cadlink-700 py-0.5 px-2 rounded-full text-xs ml-2">{sentTodayEmails.length} Leads</span>
+        </h3>
+        
+        {sentTodayEmails.length > 0 ? (
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left text-slate-600">
+                <thead className="text-xs text-slate-500 bg-slate-50 border-b border-slate-200 uppercase font-semibold">
+                  <tr>
+                    <th className="px-6 py-4">Company</th>
+                    <th className="px-6 py-4">Recipient</th>
+                    <th className="px-6 py-4">Template</th>
+                    <th className="px-6 py-4">Sent Time</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {sentTodayEmails.map((e) => (
+                    <tr key={e.id} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="px-6 py-4 font-medium text-slate-800">
+                        {e.companies?.name || 'Unknown'}
+                        {e.companies?.domain && <div className="text-xs text-slate-400 font-normal mt-0.5">{e.companies.domain}</div>}
+                      </td>
+                      <td className="px-6 py-4">
+                        {e.recipient_name && <div className="font-medium text-slate-700">{e.recipient_name}</div>}
+                        <div className="text-slate-500">{e.recipient_email}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-md text-xs font-semibold whitespace-nowrap">
+                          {e.template_name || 'Standard Outreach'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-slate-500 whitespace-nowrap">
+                        {e.sent_at ? new Date(e.sent_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Unknown'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-white border border-slate-200 rounded-xl p-8 flex flex-col items-center justify-center text-center shadow-sm">
+            <div className="bg-slate-50 p-4 rounded-full mb-4 border border-slate-100">
+              <Send className="w-8 h-8 text-slate-300" />
+            </div>
+            <h4 className="text-slate-700 font-semibold mb-1">No emails sent yet today</h4>
+            <p className="text-slate-500 text-sm max-w-sm">The Campaign Blaster hasn't run today, or no eligible leads were found. Run the engine to start outreach.</p>
+          </div>
+        )}
+      </div>
+
+      <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4 mt-12">A/B Testing & Email Performance</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         {abTestStats.length > 0 ? abTestStats.map(stat => (
           <div key={stat.name} className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
