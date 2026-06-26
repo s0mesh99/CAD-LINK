@@ -1,36 +1,6 @@
 import argparse
 import sys
-from scrapers.duckduckgo_search import DuckDuckGoScraper
-from scrapers.pdf_miner import PDFMinerScraper
-from scrapers.industry_rss import IndustryRSSScraper
-from scrapers.gem_opendata import GeMOpenDataScraper
-from scrapers.github_api import GithubApiScraper
-from scrapers.domain_cluster import DomainClusterScraper
-from scrapers.wikipedia_targeted import WikipediaTargetedScraper
 from db.client import DatabaseClient
-
-def run_scrapers():
-    print("=== STARTING V1.3 SCRAPING PIPELINE ===")
-    
-    # Priority order based on expected yield and API limits
-    scrapers = [
-        GithubApiScraper(),
-        WikipediaTargetedScraper(),
-        DuckDuckGoScraper(),
-        PDFMinerScraper(),
-        IndustryRSSScraper(),
-        GeMOpenDataScraper(),
-        DomainClusterScraper(),
-    ]
-    
-    for i, scraper in enumerate(scrapers, 1):
-        print(f"\n[Stage {i}/{len(scrapers)}] Running {scraper.name}...")
-        try:
-            scraper.run()
-        except Exception as e:
-            print(f"Error running {scraper.name}: {e}")
-    
-    print("\n=== SCRAPING PIPELINE COMPLETE ===")
 
 def pre_send_safety_check(db, phase: int) -> bool:
     """
@@ -160,7 +130,6 @@ def show_stats():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="CAD LINK Freelance Bot V1.3")
-    parser.add_argument('--run-scrapers', action='store_true', help="Run all data scrapers")
     parser.add_argument('--run-enrichment', action='store_true', help="Enrich leads missing emails")
     parser.add_argument('--run-deep-enrichment', action='store_true', help="Deeply enrich leads with firmographics via AI")
     parser.add_argument('--send-emails', action='store_true', help="Send automated cold emails")
@@ -173,9 +142,7 @@ if __name__ == '__main__':
     
     args = parser.parse_args()
     
-    if args.run_scrapers:
-        run_scrapers()
-        
+
     if args.run_enrichment:
         enrich_leads(limit=10000)
         
