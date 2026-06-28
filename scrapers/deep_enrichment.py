@@ -17,7 +17,7 @@ class DeepEnrichmentScraper:
             raise ValueError("GEMINI_API_KEY not found in .env")
             
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-1.5-flash', generation_config={"response_mime_type": "application/json"})
+        self.model = genai.GenerativeModel('gemini-flash-latest', generation_config={"response_mime_type": "application/json"})
         self.rpm_limit = 10 # Stay safe below the 15 RPM free tier limit
         self.sleep_time = 60 / self.rpm_limit
 

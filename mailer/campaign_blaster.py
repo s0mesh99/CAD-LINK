@@ -118,7 +118,7 @@ def run_campaign():
 Company Notes: "{lead['notes']}"
 Write a single, friendly, casual 10-15 word sentence saying you visited their website and noticed the kind of work they do, complimenting them briefly or acknowledging their specific niche.
 Start the sentence exactly with "I have visited your website and...". Do not use quotes or markdown. Keep it very natural and professional."""
-                            model = genai.GenerativeModel('gemini-1.5-flash')
+                            model = genai.GenerativeModel('gemini-flash-latest')
                             response = model.generate_content(prompt)
                             if response.text:
                                 lead['icebreaker'] = response.text.strip().strip('"')
