@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../supabaseClient';
-import { Search, Download, Trash2, ExternalLink, Send, Mail, LayoutList, KanbanSquare, ChevronLeft, ChevronRight, Building2, MapPin, Briefcase } from 'lucide-react';
+import { Search, Download, Trash2, ExternalLink, Send, Mail, LayoutList, KanbanSquare, ChevronLeft, ChevronRight, Briefcase } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { CRMBoard } from '../components/CRMBoard';
 
