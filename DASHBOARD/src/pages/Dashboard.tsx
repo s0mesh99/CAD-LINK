@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '../supabaseClient';
 import { 
-  CheckCircle2, XCircle
+  CheckCircle2, XCircle, Send, RefreshCw
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { formatDistanceToNow, isToday, parseISO } from 'date-fns';
@@ -16,13 +16,12 @@ export function DashboardOverview({ setCurrentTab }: { setCurrentTab?: (tab: any
 
   const [loading, setLoading] = useState(true);
 
-
-
   useEffect(() => {
     fetchAllData().finally(() => setLoading(false));
   }, []);
 
   async function fetchAllData() {
+    setLoading(true);
     // Scraper runs no longer needed on dashboard
 
     // Leads (Bypass Supabase 1000-row API limit using pagination)
@@ -101,15 +100,24 @@ export function DashboardOverview({ setCurrentTab }: { setCurrentTab?: (tab: any
   }, [emails]);
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-700">
-      
+    <div className="space-y-10 animate-in fade-in duration-700 relative">
       {/* V1.5 Daily Progress Bar */}
       <div className="bg-white/80 backdrop-blur-sm border border-slate-200/60 rounded-2xl p-6 shadow-sm">
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-lg font-bold text-slate-800">Daily Automation Goal</h2>
-          <span className="text-sm font-semibold text-[#0F766E] bg-teal-50 px-3 py-1 rounded-full">
-            {stats.successfullyEnriched} / 20 Leads
-          </span>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => fetchAllData().finally(() => setLoading(false))}
+              disabled={loading}
+              className="flex items-center gap-1.5 px-3 py-1 bg-white border border-slate-200 text-xs font-bold text-slate-600 rounded-lg hover:bg-slate-50 transition-colors shadow-sm disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </button>
+            <span className="text-sm font-semibold text-[#0F766E] bg-teal-50 px-3 py-1 rounded-full">
+              {stats.successfullyEnriched} / 20 Leads
+            </span>
+          </div>
         </div>
         <div className="w-full bg-slate-100 rounded-full h-3 mb-2 overflow-hidden">
           <motion.div 
