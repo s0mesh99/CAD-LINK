@@ -112,6 +112,7 @@ Website Text:
             res = self.db.supabase.table('companies').select('*')\
                 .eq('status', 'New Lead')\
                 .not_.is_('domain', 'null')\
+                .not_.is_('email_1', 'null')\
                 .in_('sector', ['Data Center Construction', 'Renewable Energy'])\
                 .limit(limit).execute()
             
@@ -122,6 +123,7 @@ Website Text:
                 res2 = self.db.supabase.table('companies').select('*')\
                     .eq('status', 'New Lead')\
                     .not_.is_('domain', 'null')\
+                    .not_.is_('email_1', 'null')\
                     .limit(limit - len(leads)).execute()
                 leads.extend([l for l in res2.data if l['id'] not in [x['id'] for x in leads]])
                 
