@@ -28,12 +28,15 @@ class InboxManager:
         self.db = DatabaseClient()
         
         # Initialize Gemini if key is available
-        self.gemini_key = os.getenv("GEMINI_API_KEY")
-        if HAS_GEMINI and self.gemini_key:
-            genai.configure(api_key=self.gemini_key)
-            self.model = genai.GenerativeModel('gemini-1.5-flash')
-            self.use_ai = True
-            logger.info("Gemini AI initialized for Inbox Management.")
+        if HAS_GEMINI:
+            try:
+                from utils.gemini_rotator import rotator
+                self.rotator = rotator
+                self.use_ai = True
+                logger.info("Gemini AI initialized for Inbox Management with Rotator.")
+            except Exception as e:
+                self.use_ai = False
+                logger.warning(f"Gemini Rotator failed to initialize: {e}")
         else:
             self.use_ai = False
             logger.warning("Gemini API key not found or package missing. Falling back to keyword matching.")
@@ -156,7 +159,9 @@ class InboxManager:
                 
                 Reply ONLY with the category name.
                 """
-                response = self.model.generate_content(prompt)
+                response = self.rotator.generate_content(prompt, model_name='gemini-flash-latest')
+                if not response or not response.text:
+                    return "Other"
                 res_text = response.text.strip()
                 valid = ["Meeting Booked", "Rejected", "Information Requested", "Other"]
                 for v in valid:

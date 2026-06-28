@@ -12,13 +12,11 @@ class DeepEnrichmentScraper:
         self.db = DatabaseClient()
         load_dotenv()
         
-        api_key = os.environ.get("GEMINI_API_KEY")
-        if not api_key:
-            raise ValueError("GEMINI_API_KEY not found in .env")
-            
-        genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-flash-latest', generation_config={"response_mime_type": "application/json"})
-        self.rpm_limit = 10 # Stay safe below the 15 RPM free tier limit
+        from utils.gemini_rotator import rotator
+        self.rotator = rotator
+        
+        # We have 4 Free Tier keys pooled together: 60 RPM combined limit.
+        self.rpm_limit = 50 
         self.sleep_time = 60 / self.rpm_limit
 
     def fetch_website_text(self, domain):
@@ -88,7 +86,11 @@ Website Text:
         max_retries = 3
         for attempt in range(max_retries):
             try:
-                response = self.model.generate_content(prompt)
+                response = self.rotator.generate_content(
+                    prompt, 
+                    model_name='gemini-flash-latest', 
+                    generation_config={"response_mime_type": "application/json"}
+                )
                 clean_text = response.text.strip()
                 if clean_text.startswith("```json"):
                     clean_text = clean_text[7:]
@@ -165,9 +167,6 @@ Website Text:
                     self.db.supabase.table('companies').update(updates).eq('id', lead['id']).execute()
                     print(f"   -> Success! Found & Enriched: {updates}", flush=True)
                     success_count += 1
-                    if success_count >= 5:
-                        print(f"\n[!] Reached target of 5 enriched leads. Stopping early to save API limits.", flush=True)
-                        break
                 else:
                     # AI determined they are not an outsourcing target
                     updates = {'status': 'Rejected', 'notes': 'AI Filter: Not a CAD/Outsourcing target.'}

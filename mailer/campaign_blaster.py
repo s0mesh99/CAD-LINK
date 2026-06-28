@@ -18,8 +18,8 @@ ZOHO_EMAIL = os.environ.get("ZOHO_EMAIL")
 ZOHO_PASSWORD = os.environ.get("ZOHO_APP_PASSWORD")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
-if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
+import google.generativeai as genai
+from utils.gemini_rotator import rotator
 
 # Protect the main domain: Send very small batches to avoid spam filters
 # Since the Action runs 6 times a day, 4 per batch = 24 emails per day.
@@ -112,15 +112,14 @@ def run_campaign():
             for lead in target_leads:
                 try:
                     # AI Custom Icebreaker Generation
-                    if lead.get('notes') and GEMINI_API_KEY:
+                    if lead.get('notes'):
                         try:
                             prompt = f"""You are sending a cold email to a prospective client.
 Company Notes: "{lead['notes']}"
 Write a single, friendly, casual 10-15 word sentence saying you visited their website and noticed the kind of work they do, complimenting them briefly or acknowledging their specific niche.
 Start the sentence exactly with "I have visited your website and...". Do not use quotes or markdown. Keep it very natural and professional."""
-                            model = genai.GenerativeModel('gemini-flash-latest')
-                            response = model.generate_content(prompt)
-                            if response.text:
+                            response = rotator.generate_content(prompt, model_name='gemini-flash-latest')
+                            if response and response.text:
                                 lead['icebreaker'] = response.text.strip().strip('"')
                         except Exception as e:
                             print(f"  [!] AI Icebreaker failed for {lead.get('name')}: {e}")
