@@ -163,6 +163,9 @@ Website Text:
                     self.db.supabase.table('companies').update(updates).eq('id', lead['id']).execute()
                     print(f"   -> Success! Found & Enriched: {updates}", flush=True)
                     success_count += 1
+                    if success_count >= 5:
+                        print(f"\n[!] Reached target of 5 enriched leads. Stopping early to save API limits.", flush=True)
+                        break
                 else:
                     # AI determined they are not an outsourcing target
                     updates = {'status': 'Rejected', 'notes': 'AI Filter: Not a CAD/Outsourcing target.'}
