@@ -110,7 +110,7 @@ Website Text:
         try:
             # First priority: Data Centers and Renewable Energy
             res = self.db.supabase.table('companies').select('*')\
-                .or_('status.eq.New Lead,status.is.null')\
+                .eq('status', 'New Lead')\
                 .not_.is_('domain', 'null')\
                 .in_('sector', ['Data Center Construction', 'Renewable Energy'])\
                 .limit(limit).execute()
@@ -120,7 +120,7 @@ Website Text:
             if len(leads) < limit:
                 # Fallback to other sectors
                 res2 = self.db.supabase.table('companies').select('*')\
-                    .or_('status.eq.New Lead,status.is.null')\
+                    .eq('status', 'New Lead')\
                     .not_.is_('domain', 'null')\
                     .limit(limit - len(leads)).execute()
                 leads.extend([l for l in res2.data if l['id'] not in [x['id'] for x in leads]])
