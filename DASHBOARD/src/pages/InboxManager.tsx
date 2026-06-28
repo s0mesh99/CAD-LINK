@@ -22,7 +22,7 @@ export function InboxManager() {
 
     const { data } = await supabase
       .from('email_tracking')
-      .select('*, companies(id, name, domain, status)')
+      .select('*, companies(id, name, domain, status, notes, city, country)')
       .gte('sent_at', today.toISOString())
       .order('sent_at', { ascending: false });
     
@@ -53,9 +53,9 @@ export function InboxManager() {
         <div>
           <h1 className="text-2xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
             <Send className="w-8 h-8 text-indigo-600" />
-            Daily Dispatched
+            Outreach Summary
           </h1>
-          <p className="text-slate-500 mt-1">Review the daily quota of 20 cold outreach emails sent automatically today.</p>
+          <p className="text-slate-500 mt-1">Review the AI summaries and emails sent for your daily dispatched leads.</p>
         </div>
         <div className="bg-white border border-slate-200 shadow-sm px-4 py-2 rounded-xl text-sm font-bold text-slate-700 flex items-center gap-2 w-fit">
           <CheckCircle2 className="w-4 h-4 text-emerald-600" />
@@ -70,7 +70,8 @@ export function InboxManager() {
               <tr>
                 <th className="px-6 py-4">Time Sent</th>
                 <th className="px-6 py-4">Company</th>
-                <th className="px-6 py-4">Email Details</th>
+                <th className="px-6 py-4 min-w-[200px]">Email Details</th>
+                <th className="px-6 py-4 min-w-[300px]">AI Summary</th>
                 <th className="px-6 py-4">CRM Action</th>
               </tr>
             </thead>
@@ -82,12 +83,13 @@ export function InboxManager() {
                       <td className="px-6 py-4"><div className="h-4 w-24 bg-slate-200 rounded"></div></td>
                       <td className="px-6 py-4"><div className="h-4 w-32 bg-slate-200 rounded"></div></td>
                       <td className="px-6 py-4"><div className="h-4 w-48 bg-slate-200 rounded"></div></td>
+                      <td className="px-6 py-4"><div className="h-4 w-48 bg-slate-200 rounded"></div></td>
                       <td className="px-6 py-4"><div className="h-8 w-28 bg-slate-200 rounded-lg"></div></td>
                     </motion.tr>
                   ))
                 ) : dispatched.length === 0 ? (
                   <tr className="border-b border-slate-100">
-                    <td colSpan={4} className="px-6 py-12 text-center text-slate-500">
+                    <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
                       <Send className="w-12 h-12 text-slate-300 mx-auto mb-3" />
                       <p className="font-medium">No emails dispatched yet today.</p>
                       <p className="text-xs mt-1">Check back after the Campaign Blaster runs at 8:30 AM UTC.</p>
@@ -127,6 +129,16 @@ export function InboxManager() {
                         <div className="text-xs text-slate-500 mt-1 truncate max-w-xs" title={item.recipient_email}>
                           To: {item.recipient_email}
                         </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-xs text-slate-700 whitespace-pre-wrap max-w-sm">
+                          {item.companies?.notes || 'No summary available.'}
+                        </div>
+                        {item.companies?.city && item.companies?.country && (
+                          <div className="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-wide">
+                            📍 {item.companies.city}, {item.companies.country}
+                          </div>
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         {item.companies?.status === 'Contacted' ? (

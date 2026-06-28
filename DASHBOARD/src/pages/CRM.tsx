@@ -215,6 +215,8 @@ export function CRMDatabase() {
               <option value="new lead">Pending</option>
               <option value="enriched">Enriched</option>
               <option value="failed">Failed</option>
+              <option value="rejected">Rejected</option>
+              <option value="contacted">Contacted</option>
             </select>
 
             <select value={filterTier} onChange={e => setFilterTier(e.target.value)} className="border border-slate-300 rounded-md px-2 py-1.5 text-sm bg-white focus:outline-none focus:border-[#0F766E]">
@@ -328,9 +330,11 @@ export function CRMDatabase() {
                         </td>
                         <td className="p-4 text-sm">
                           <div className="flex flex-col gap-1 mt-1">
-                            {lead.status === 'Contacted' && <span className="w-fit bg-indigo-100 text-indigo-700 text-[10px] px-2 py-0.5 rounded-full font-bold">Contacted</span>}
-                            {lead.status === 'Enriched' && <span className="w-fit bg-emerald-100 text-emerald-700 text-[10px] px-2 py-0.5 rounded-full font-bold">Enriched</span>}
-                            {lead.status === 'New Lead' && <span className="w-fit bg-slate-100 text-slate-600 text-[10px] px-2 py-0.5 rounded-full font-bold">Pending AI</span>}
+                            {lead.status?.toLowerCase() === 'contacted' && <span className="w-fit bg-indigo-100 text-indigo-700 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase">Contacted</span>}
+                            {lead.status?.toLowerCase() === 'enriched' && <span className="w-fit bg-emerald-100 text-emerald-700 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase">Enriched</span>}
+                            {lead.status?.toLowerCase() === 'failed' && <span className="w-fit bg-red-100 text-red-700 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase">Failed</span>}
+                            {lead.status?.toLowerCase() === 'rejected' && <span className="w-fit bg-amber-100 text-amber-700 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase">Rejected</span>}
+                            {(!lead.status || lead.status?.toLowerCase() === 'new lead') && <span className="w-fit bg-slate-100 text-slate-600 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase">Pending AI</span>}
                           </div>
                         </td>
                         <td className="p-4 whitespace-nowrap">

@@ -107,7 +107,7 @@ export function Layout({
                 )}
               >
                 <Send className="w-4 h-4" />
-                Daily Dispatched
+                Outreach Summary
               </button>
               <button 
                 onClick={() => setCurrentTab('leads')}

@@ -9,7 +9,7 @@ import { formatDistanceToNow, isToday, parseISO } from 'date-fns';
 export function DashboardOverview({ setCurrentTab }: { setCurrentTab?: (tab: any) => void }) {
   const [stats, setStats] = useState({ 
     totalLeads: 0, premiumLeads: 0, totalEmails: 0, bouncedEmails: 0, enrichedEmails: 0,
-    pendingLeads: 0, successfullyEnriched: 0, failedEnrichment: 0, aiRejected: 0
+    pendingLeads: 0, successfullyEnriched: 0, contactedLeads: 0, failedEnrichment: 0, aiRejected: 0
   });
   const [leads, setLeads] = useState<any[]>([]);
   const [emails, setEmails] = useState<any[]>([]);
@@ -60,7 +60,8 @@ export function DashboardOverview({ setCurrentTab }: { setCurrentTab?: (tab: any
       enrichedEmails: allLeads.filter(l => !!l.email_1 || !!l.contact_email || !!l.email).length,
       // Phase 5 Pipeline Metrics
       pendingLeads: allLeads.filter(l => !l.status || l.status.toLowerCase() === 'new lead').length,
-      successfullyEnriched: allLeads.filter(l => l.status?.toLowerCase() === 'enriched').length,
+      successfullyEnriched: allLeads.filter(l => l.status?.toLowerCase() === 'enriched' || l.status?.toLowerCase() === 'contacted').length,
+      contactedLeads: allLeads.filter(l => l.status?.toLowerCase() === 'contacted').length,
       failedEnrichment: allLeads.filter(l => l.status?.toLowerCase() === 'failed').length,
       aiRejected: allLeads.filter(l => l.status?.toLowerCase() === 'rejected').length,
     });
@@ -115,14 +116,14 @@ export function DashboardOverview({ setCurrentTab }: { setCurrentTab?: (tab: any
               Refresh
             </button>
             <span className="text-sm font-semibold text-[#0F766E] bg-teal-50 px-3 py-1 rounded-full">
-              {stats.successfullyEnriched} / 20 Leads
+              {sentTodayEmails.length} / 20 Leads
             </span>
           </div>
         </div>
         <div className="w-full bg-slate-100 rounded-full h-3 mb-2 overflow-hidden">
           <motion.div 
             initial={{ width: 0 }}
-            animate={{ width: `${Math.min(100, (stats.successfullyEnriched / 20) * 100)}%` }}
+            animate={{ width: `${Math.min(100, (sentTodayEmails.length / 20) * 100)}%` }}
             transition={{ duration: 1, delay: 0.2 }}
             className="bg-gradient-to-r from-teal-400 to-[#0F766E] h-3 rounded-full"
           ></motion.div>
@@ -133,12 +134,13 @@ export function DashboardOverview({ setCurrentTab }: { setCurrentTab?: (tab: any
       {/* V1.5 Pipeline Metrics (Primary) */}
       <div>
         <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">AI Enrichment Pipeline</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
-          <MetricCard title="Awaiting Deep AI" value={loading ? '...' : stats.pendingLeads} valueColor="text-slate-700" subtitle="Queued for tomorrow's run" tooltip="Click to view pending leads in CRM" onClick={() => { if(setCurrentTab) { window.location.hash = '#filterEnrichment=new lead'; setCurrentTab('crm'); } }} />
-          <MetricCard title="Successfully Enriched" value={loading ? '...' : stats.successfullyEnriched} valueColor="text-[#0F766E]" subtitle="Ready for Email Blaster" tooltip="Click to view enriched leads in CRM" onClick={() => { if(setCurrentTab) { window.location.hash = '#filterEnrichment=enriched'; setCurrentTab('crm'); } }} />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
+          <MetricCard title="Raw Leads" value={loading ? '...' : stats.pendingLeads} valueColor="text-slate-700" subtitle="Awaiting Deep AI" tooltip="Click to view pending leads in CRM" onClick={() => { if(setCurrentTab) { window.location.hash = '#filterEnrichment=new lead'; setCurrentTab('crm'); } }} />
+          <MetricCard title="Successfully Enriched" value={loading ? '...' : stats.successfullyEnriched} valueColor="text-[#0F766E]" subtitle="Total AI Successes" tooltip="Click to view enriched leads in CRM" onClick={() => { if(setCurrentTab) { window.location.hash = '#filterEnrichment=enriched'; setCurrentTab('crm'); } }} />
+          <MetricCard title="Contacted" value={loading ? '...' : stats.contactedLeads} valueColor="text-indigo-600" subtitle="Emailed by AI" tooltip="Click to view contacted leads in CRM" onClick={() => { if(setCurrentTab) { window.location.hash = '#filterEnrichment=contacted'; setCurrentTab('crm'); } }} />
           <MetricCard title="Rejected by AI" value={loading ? '...' : stats.aiRejected} valueColor="text-amber-600" subtitle="Not an outsourcing target" tooltip="Click to view rejected leads in CRM" onClick={() => { if(setCurrentTab) { window.location.hash = '#filterEnrichment=rejected'; setCurrentTab('crm'); } }} />
           <MetricCard title="AI Failure Rate" value={loading ? '...' : stats.totalLeads > 0 ? `${((stats.failedEnrichment / stats.totalLeads)*100).toFixed(1)}%` : '0%'} valueColor="text-red-500" subtitle={`${stats.failedEnrichment} dead websites`} tooltip="Click to view failed leads in CRM" onClick={() => { if(setCurrentTab) { window.location.hash = '#filterEnrichment=failed'; setCurrentTab('crm'); } }} />
-          <MetricCard title="Total Dispatched" value={loading ? '...' : stats.totalEmails} valueColor="text-indigo-600" subtitle="Cold emails successfully sent" tooltip="The total amount of emails successfully delivered by the Campaign Blaster." />
+          <MetricCard title="Total Dispatched" value={loading ? '...' : stats.totalEmails} valueColor="text-blue-600" subtitle="Cold emails sent overall" tooltip="The total amount of emails successfully delivered by the Campaign Blaster." />
         </div>
       </div>
 
