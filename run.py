@@ -149,7 +149,7 @@ if __name__ == '__main__':
     if args.run_deep_enrichment:
         from scrapers.deep_enrichment import DeepEnrichmentScraper
         scraper = DeepEnrichmentScraper()
-        scraper.run(limit=10000)
+        scraper.run(limit=10)
     if args.run_blaster:
         from mailer.campaign_blaster import run_campaign
         run_campaign()
